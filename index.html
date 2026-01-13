@@ -161,8 +161,8 @@
             selectedRooms: [], 
             selectedFoods: [],
             bookedRooms: [], 
-            specialDates: [], // ดึงจาก backend
-            promoCodes: [],   // ดึงจาก backend
+            specialDates: [], 
+            promoCodes: [],   
             activePromo: null,
             discountAmount: 0,
             total: 0,
@@ -204,7 +204,6 @@
                 }
             } catch (err) { console.error('LIFF Init Error:', err); }
             
-            // ดึง Config เบื้องต้น (Special Dates, Promo Codes)
             fetchConfig();
             renderFood();
         }
@@ -234,7 +233,7 @@
                     const bIn = new Date(booking.CheckIn);
                     const bOut = new Date(booking.CheckOut);
                     if (selIn < bOut && selOut > bIn) {
-                        const roomsInBooking = booking.RoomsInfo.split(', ');
+                        const roomsInBooking = (booking.RoomsInfo || "").split(', ');
                         roomsInBooking.forEach(rName => {
                             const roomObj = roomData.find(rd => rd.name === rName);
                             if (roomObj && !busyRooms.includes(roomObj.id)) busyRooms.push(roomObj.id);
@@ -395,25 +394,22 @@
             state.roomSubtotal = roomTotal;
             state.foodSubtotal = foodTotal;
 
-            // คำนวณส่วนลด (เฉพาะค่าห้อง)
             state.discountAmount = 0;
             if (state.activePromo) {
-                if (state.activePromo.type === 'baht') {
+                if (state.activePromo.type === 'บาท') {
                     state.discountAmount = Math.min(roomTotal, Number(state.activePromo.value));
-                } else if (state.activePromo.type === 'percent') {
+                } else if (state.activePromo.type === '%') {
                     state.discountAmount = roomTotal * (Number(state.activePromo.value) / 100);
                 }
             }
 
             state.total = (roomTotal - state.discountAmount) + foodTotal;
 
-            // ตรวจสอบวันพิเศษเพื่อเรียกเก็บมัดจำ 100%
             let depositRate = 0.5;
             if (state.checkin && state.specialDates.includes(state.checkin)) {
                 depositRate = 1.0;
             }
 
-            // มัดจำคำนวณจาก (ราคาห้องหลังหักส่วนลด * อัตรามัดจำ) + ค่าอาหารทั้งหมด
             state.deposit = ((roomTotal - state.discountAmount) * depositRate) + foodTotal;
 
             document.getElementById('totalPrice').innerText = `฿${state.total.toLocaleString()}`;
@@ -444,13 +440,25 @@
             window.scrollTo(0, 0);
         }
 
+        // ฟังก์ชันช่วยจัดรูปแบบวันที่เป็นภาษาไทย
+        function formatDateThai(dateStr) {
+            if (!dateStr) return "-";
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+            const day = d.getDate();
+            const month = months[d.getMonth()];
+            const year = d.getFullYear() + 543;
+            return `${day} ${month} ${year}`;
+        }
+
         function updateSummary() {
             const summary = document.getElementById('summaryContent');
             const isSpecial = state.checkin && state.specialDates.includes(state.checkin);
 
             summary.innerHTML = `
-                <div class="flex justify-between"><span>เช็คอิน:</span> <b>${state.checkin}</b></div>
-                <div class="flex justify-between"><span>เช็คเอาท์:</span> <b>${state.checkout}</b></div>
+                <div class="flex justify-between"><span>เช็คอิน:</span> <b>${formatDateThai(state.checkin)}</b></div>
+                <div class="flex justify-between"><span>เช็คเอาท์:</span> <b>${formatDateThai(state.checkout)}</b></div>
                 <div class="mt-2 font-bold border-t pt-1">รายการห้องพัก:</div>
                 ${state.selectedRooms.map(r => `<div class="flex justify-between text-xs"><span>- ${r.name} (${r.guests} ท่าน)</span> <span>฿${r.price.toLocaleString()}</span></div>`).join('')}
                 <div class="flex justify-between text-xs font-bold text-emerald-800"><span>รวมค่าที่พัก:</span> <span>฿${state.roomSubtotal.toLocaleString()}</span></div>
@@ -469,15 +477,15 @@
         }
 
         async function submitBooking() {
-            const slip = document.getElementById('slip').files[0];
+            const slipFile = document.getElementById('slip').files[0];
             const name = document.getElementById('custName').value;
             const tel = document.getElementById('custTel').value;
 
-            if (!name || !tel || !slip) return alert("กรุณากรอกข้อมูลและแนบสลิป");
+            if (!name || !tel || !slipFile) return alert("กรุณากรอกข้อมูลและแนบสลิป");
 
             showLoading("กำลังส่งข้อมูลการจอง...");
             const reader = new FileReader();
-            reader.readAsDataURL(slip);
+            reader.readAsDataURL(slipFile);
             reader.onload = async () => {
                 try {
                     const response = await fetch(BACKEND_URL, {
@@ -496,15 +504,17 @@
                             discount: state.discountAmount,
                             total: state.total,
                             deposit: state.deposit,
-                            slip: reader.result.split(',')[1]
+                            slip: reader.result
                         })
                     });
                     const res = await response.json();
                     if(res.status === 'success') {
                         alert("จองสำเร็จ! รอแอดมินตรวจสอบ");
                         liff.closeWindow();
+                    } else {
+                        alert("เกิดข้อผิดพลาด: " + res.message);
                     }
-                } catch (err) { alert("เกิดข้อผิดพลาด"); }
+                } catch (err) { alert("เกิดข้อผิดพลาดในการเชื่อมต่อ"); }
                 finally { hideLoading(); }
             };
         }
