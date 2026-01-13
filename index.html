@@ -78,7 +78,7 @@
             <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-100">
                 <h2 class="font-semibold text-emerald-800 mb-3">จองอาหารล่วงหน้า (สั่งล่วงหน้า 1 วัน)</h2>
                 <div id="foodList" class="space-y-4"></div>
-                <p class="text-[10px] text-orange-600 mt-2">* ค่าอาหารต้องชำระเต็มจำนวน ไม่รวมในยอดมัดจำที่พัก</p>
+                <p class="text-[10px] text-orange-600 mt-2">* ค่าอาหารต้องชำระเต็มจำนวน ไม่รวมในส่วนลดโค้ด</p>
             </div>
         </section>
 
@@ -86,7 +86,19 @@
         <section id="step3" class="hidden space-y-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-100">
                 <h2 class="font-semibold text-emerald-800 mb-4 text-center">สรุปรายการจอง</h2>
+                
+                <!-- Promo Code Section -->
+                <div class="mb-4 bg-gray-50 p-3 rounded-lg border border-dashed">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">โค้ดส่วนลด (เฉพาะค่าห้อง)</label>
+                    <div class="flex space-x-2 mt-1">
+                        <input type="text" id="promoInput" class="flex-1 border rounded p-2 text-sm uppercase" placeholder="กรอกโค้ดที่นี่">
+                        <button onclick="applyPromo()" class="bg-emerald-700 text-white px-4 py-2 rounded text-xs font-bold">ใช้โค้ด</button>
+                    </div>
+                    <p id="promoStatus" class="text-[10px] mt-1 hidden"></p>
+                </div>
+
                 <div id="summaryContent" class="text-sm space-y-2 border-b pb-4 mb-4"></div>
+                
                 <div class="space-y-3">
                     <div>
                         <label class="text-xs font-semibold">ชื่อผู้จอง</label>
@@ -148,8 +160,11 @@
             checkout: '',
             selectedRooms: [], 
             selectedFoods: [],
-            bookedRooms: [], // ห้องที่ถูกจองแล้วในช่วงวันที่เลือก
-            isSpecialDay: false,
+            bookedRooms: [], 
+            specialDates: [], // ดึงจาก backend
+            promoCodes: [],   // ดึงจาก backend
+            activePromo: null,
+            discountAmount: 0,
             total: 0,
             deposit: 0,
             roomSubtotal: 0,
@@ -188,34 +203,41 @@
                     liff.login();
                 }
             } catch (err) { console.error('LIFF Init Error:', err); }
+            
+            // ดึง Config เบื้องต้น (Special Dates, Promo Codes)
+            fetchConfig();
             renderFood();
+        }
+
+        async function fetchConfig() {
+            try {
+                const response = await fetch(BACKEND_URL);
+                const data = await response.json();
+                state.specialDates = data.specialDates || [];
+                state.promoCodes = data.promoCodes || [];
+            } catch (err) { console.log("Config fetch failed"); }
         }
 
         async function checkAvailability() {
             showLoading("กำลังตรวจสอบห้องว่าง...");
             try {
                 const response = await fetch(BACKEND_URL);
-                const allBookings = await response.json();
+                const data = await response.json();
+                const allBookings = data.bookings || [];
                 
                 const selIn = new Date(state.checkin);
                 const selOut = new Date(state.checkout);
 
-                // ค้นหาห้องที่ถูกจองในช่วงวันที่เลือก
                 const busyRooms = [];
                 allBookings.forEach(booking => {
                     if (booking.Status === 'ยกเลิก') return;
-
                     const bIn = new Date(booking.CheckIn);
                     const bOut = new Date(booking.CheckOut);
-
-                    // เงื่อนไขทับซ้อน: (เช็คอินใหม่ < เช็คเอาท์เก่า) และ (เช็คเอาท์ใหม่ > เช็คอินเก่า)
                     if (selIn < bOut && selOut > bIn) {
                         const roomsInBooking = booking.RoomsInfo.split(', ');
                         roomsInBooking.forEach(rName => {
                             const roomObj = roomData.find(rd => rd.name === rName);
-                            if (roomObj && !busyRooms.includes(roomObj.id)) {
-                                busyRooms.push(roomObj.id);
-                            }
+                            if (roomObj && !busyRooms.includes(roomObj.id)) busyRooms.push(roomObj.id);
                         });
                     }
                 });
@@ -223,8 +245,7 @@
                 state.bookedRooms = busyRooms;
                 renderRooms();
             } catch (err) {
-                console.error("Availability Error:", err);
-                renderRooms(); // Fallback to show all if error
+                renderRooms();
             } finally {
                 hideLoading();
             }
@@ -333,7 +354,7 @@
 
             state.checkin = cin;
             state.checkout = cout;
-            state.selectedRooms = []; // รีเซ็ตห้องที่เลือกใหม่เมื่อเปลี่ยนวัน
+            state.selectedRooms = []; 
 
             if (cin && cout) {
                 document.getElementById('roomSelectionArea').classList.remove('hidden');
@@ -341,6 +362,25 @@
                 checkAvailability();
                 calculateTotal();
             }
+        }
+
+        function applyPromo() {
+            const codeInput = document.getElementById('promoInput').value.toUpperCase();
+            const statusEl = document.getElementById('promoStatus');
+            
+            const promo = state.promoCodes.find(p => p.code === codeInput);
+            if (promo) {
+                state.activePromo = promo;
+                statusEl.innerText = `✅ ใช้โค้ด "${promo.code}" สำเร็จ`;
+                statusEl.className = "text-[10px] mt-1 text-emerald-600 font-bold";
+            } else {
+                state.activePromo = null;
+                statusEl.innerText = "❌ ไม่พบโค้ดส่วนลดนี้";
+                statusEl.className = "text-[10px] mt-1 text-red-500 font-bold";
+            }
+            statusEl.classList.remove('hidden');
+            calculateTotal();
+            updateSummary();
         }
 
         function calculateTotal() {
@@ -354,8 +394,27 @@
 
             state.roomSubtotal = roomTotal;
             state.foodSubtotal = foodTotal;
-            state.total = roomTotal + foodTotal;
-            state.deposit = (roomTotal * 0.5) + foodTotal;
+
+            // คำนวณส่วนลด (เฉพาะค่าห้อง)
+            state.discountAmount = 0;
+            if (state.activePromo) {
+                if (state.activePromo.type === 'baht') {
+                    state.discountAmount = Math.min(roomTotal, Number(state.activePromo.value));
+                } else if (state.activePromo.type === 'percent') {
+                    state.discountAmount = roomTotal * (Number(state.activePromo.value) / 100);
+                }
+            }
+
+            state.total = (roomTotal - state.discountAmount) + foodTotal;
+
+            // ตรวจสอบวันพิเศษเพื่อเรียกเก็บมัดจำ 100%
+            let depositRate = 0.5;
+            if (state.checkin && state.specialDates.includes(state.checkin)) {
+                depositRate = 1.0;
+            }
+
+            // มัดจำคำนวณจาก (ราคาห้องหลังหักส่วนลด * อัตรามัดจำ) + ค่าอาหารทั้งหมด
+            state.deposit = ((roomTotal - state.discountAmount) * depositRate) + foodTotal;
 
             document.getElementById('totalPrice').innerText = `฿${state.total.toLocaleString()}`;
             document.getElementById('depositText').innerText = `฿${state.deposit.toLocaleString()}`;
@@ -387,14 +446,25 @@
 
         function updateSummary() {
             const summary = document.getElementById('summaryContent');
+            const isSpecial = state.checkin && state.specialDates.includes(state.checkin);
+
             summary.innerHTML = `
                 <div class="flex justify-between"><span>เช็คอิน:</span> <b>${state.checkin}</b></div>
                 <div class="flex justify-between"><span>เช็คเอาท์:</span> <b>${state.checkout}</b></div>
                 <div class="mt-2 font-bold border-t pt-1">รายการห้องพัก:</div>
                 ${state.selectedRooms.map(r => `<div class="flex justify-between text-xs"><span>- ${r.name} (${r.guests} ท่าน)</span> <span>฿${r.price.toLocaleString()}</span></div>`).join('')}
-                ${state.selectedFoods.length > 0 ? `<div class="mt-1 font-bold">อาหาร:</div>` + state.selectedFoods.map(f => `<div class="flex justify-between text-xs"><span>- ${f.name} x ${f.qty}</span> <span>฿${(f.price * f.qty).toLocaleString()}</span></div>`).join('') : ''}
+                <div class="flex justify-between text-xs font-bold text-emerald-800"><span>รวมค่าที่พัก:</span> <span>฿${state.roomSubtotal.toLocaleString()}</span></div>
+                
+                ${state.discountAmount > 0 ? `<div class="flex justify-between text-xs text-red-600 font-bold"><span>ส่วนลดโค้ด (${state.activePromo.code}):</span> <span>-฿${state.discountAmount.toLocaleString()}</span></div>` : ''}
+
+                ${state.selectedFoods.length > 0 ? `<div class="mt-1 font-bold">อาหาร (ไม่ร่วมส่วนลด):</div>` + state.selectedFoods.map(f => `<div class="flex justify-between text-xs"><span>- ${f.name} x ${f.qty}</span> <span>฿${(f.price * f.qty).toLocaleString()}</span></div>`).join('') : ''}
+                
                 <div class="border-t mt-2 pt-1 flex justify-between font-bold text-emerald-900"><span>รวมทั้งสิ้น:</span> <span>฿${state.total.toLocaleString()}</span></div>
-                <div class="text-xs text-red-600 font-bold mt-1">ยอดมัดจำที่ต้องโอน: ฿${state.deposit.toLocaleString()}</div>
+                
+                <div class="mt-2 p-2 bg-red-50 rounded text-[10px] text-red-700 font-bold">
+                    * เงื่อนไขมัดจำ: ${isSpecial ? 'วันพิเศษ มัดจำ 100%' : 'มัดจำห้องพัก 50% + ค่าอาหาร 100%'}
+                    <br>ยอดโอน: ฿${state.deposit.toLocaleString()}
+                </div>
             `;
         }
 
@@ -422,6 +492,8 @@
                             checkout: state.checkout,
                             rooms: JSON.stringify(state.selectedRooms),
                             foods: JSON.stringify(state.selectedFoods),
+                            promoCode: state.activePromo ? state.activePromo.code : '',
+                            discount: state.discountAmount,
                             total: state.total,
                             deposit: state.deposit,
                             slip: reader.result.split(',')[1]
