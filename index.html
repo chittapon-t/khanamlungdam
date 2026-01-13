@@ -21,7 +21,8 @@
     <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
         <div class="bg-white p-5 rounded-lg shadow-xl text-center">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-            <p class="mt-3 text-emerald-800">กำลังดำเนินการ...</p>
+            <p class="mt-3 text-emerald-800 font-bold">กำลังส่งข้อมูลการจอง...</p>
+            <p class="text-xs text-gray-500">กรุณาอย่าปิดหน้าต่างนี้</p>
         </div>
     </div>
 
@@ -39,7 +40,6 @@
         
         <!-- STEP 1: Date & Room Selection -->
         <section id="step1" class="space-y-6">
-            <!-- ส่วนเลือกวันที่ (แสดงเป็นอันดับแรก) -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-100">
                 <h2 class="font-semibold text-emerald-800 mb-3 flex items-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -57,18 +57,14 @@
                 </div>
             </div>
 
-            <!-- ส่วนเลือกห้องพัก (ซ่อนไว้รอเลือกวันที่) -->
             <div id="roomSelectionArea" class="hidden fade-in space-y-4">
                 <h2 class="font-semibold text-emerald-800 px-1 flex items-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                     2. เลือกห้องพักที่ท่านต้องการ
                 </h2>
-                <div id="roomList" class="space-y-3">
-                    <!-- รายการห้องพักจะถูกฉีดเข้ามาที่นี่ -->
-                </div>
+                <div id="roomList" class="space-y-3"></div>
             </div>
 
-            <!-- ข้อความแจ้งเตือนเมื่อยังไม่เลือกวันที่ -->
             <div id="dateNotice" class="text-center py-10 text-gray-400">
                 <p class="text-sm">กรุณาระบุวันเข้าพักและวันออก<br>เพื่อตรวจสอบห้องที่ว่างให้บริการ</p>
             </div>
@@ -107,20 +103,28 @@
                 </div>
             </div>
 
+            <!-- PAYMENT SECTION WITH DYNAMIC QR -->
             <div class="bg-emerald-50 p-6 rounded-xl border-2 border-dashed border-emerald-200 text-center">
-                <h3 class="font-bold text-emerald-800 mb-2 text-sm uppercase">ยอดมัดจำรวมที่ต้องโอน</h3>
+                <h3 class="font-bold text-emerald-800 mb-2 text-sm uppercase">ยอดมัดจำที่ต้องโอน</h3>
                 <p id="depositText" class="text-3xl font-bold text-red-600 mb-1">฿0.00</p>
                 <p class="text-[10px] text-gray-500 mb-4">(ค่าที่พักมัดจำ + ค่าอาหารเต็มจำนวน)</p>
                 
-                <div class="bg-white p-2 inline-block rounded shadow-sm mb-4">
-                    <img id="qrCode" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=promptpay0615924262" class="w-48 h-48">
+                <div class="bg-white p-3 inline-block rounded-xl shadow-md mb-4 border border-emerald-100">
+                    <img id="qrCode" src="https://via.placeholder.com/200?text=Generating+QR..." class="w-48 h-48 mx-auto" alt="PromptPay QR Code">
+                    <div class="mt-2 text-[10px] text-gray-400 font-medium">Scan to Pay via PromptPay</div>
                 </div>
-                <p class="text-sm text-emerald-900 font-bold">ชื่อบัญชี: อลงกต ทวีผ่อง</p>
-                <p class="text-xs text-gray-500 mb-4">พร้อมเพย์: 0615924262</p>
                 
-                <div class="text-left">
-                    <label class="block text-sm font-semibold mb-1">แนบหลักฐานการโอน (สลิป)</label>
-                    <input type="file" id="slip" accept="image/*" class="w-full bg-white border p-2 rounded-lg text-sm">
+                <div class="mb-4">
+                    <p class="text-sm text-emerald-900 font-bold">ชื่อบัญชี: อลงกต ทวีผ่อง</p>
+                    <p class="text-xs text-gray-600">พร้อมเพย์: <span class="font-bold">0615924262</span></p>
+                </div>
+                
+                <div class="text-left bg-white p-4 rounded-lg border">
+                    <label class="block text-sm font-semibold mb-2 text-emerald-800 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        แนบหลักฐานการโอน (สลิป)
+                    </label>
+                    <input type="file" id="slip" accept="image/*" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
                 </div>
             </div>
         </section>
@@ -141,7 +145,8 @@
 
     <script>
         const LIFF_ID = "2008863563-tuai5kaC"; 
-        const BACKEND_URL = "https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec"; 
+        const PROMPTPAY_ID = "0615924262"; // เบอร์พร้อมเพย์
+        const BACKEND_URL = "https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec";
         
         let state = {
             currentStep: 1,
@@ -195,7 +200,6 @@
             renderFood();
         }
 
-        // ฟังก์ชันช่วยจัดรูปแบบวันที่เป็นแบบไทย
         function formatThaiDate(dateStr) {
             if (!dateStr) return "";
             const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
@@ -303,8 +307,8 @@
         function handleDateChange() {
             const checkin = document.getElementById('checkin').value;
             const checkout = document.getElementById('checkout').value;
-            
             const todayStr = new Date().toISOString().split('T')[0];
+            
             if (checkin && checkin === todayStr) {
                 alert("ขออภัย ไม่สามารถจองวันเดียวกับวันที่เข้าพักได้ผ่านระบบออนไลน์ กรุณาโทรติดต่อโดยตรง");
                 document.getElementById('checkin').value = "";
@@ -376,6 +380,17 @@
 
             document.getElementById('totalPrice').innerText = `฿${state.total.toLocaleString()}`;
             document.getElementById('depositText').innerText = `฿${state.deposit.toLocaleString()}`;
+            
+            updateQRCode(state.deposit);
+        }
+
+        function updateQRCode(amount) {
+            const qrImg = document.getElementById('qrCode');
+            if (amount <= 0) {
+                qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=promptpay${PROMPTPAY_ID}`;
+                return;
+            }
+            qrImg.src = `https://promptpay.io/${PROMPTPAY_ID}/${amount}.png`;
         }
 
         function changeStep(delta) {
@@ -441,6 +456,8 @@
                     </div>
                 </div>
             `;
+            
+            updateQRCode(state.deposit);
         }
 
         async function submitBooking() {
@@ -458,14 +475,15 @@
             reader.onload = async () => {
                 const base64Slip = reader.result.split(',')[1];
                 const payload = {
+                    action: 'submitBooking',
                     userId: state.user.id,
                     userName: state.user.name,
                     custName: name,
                     custTel: tel,
                     checkin: state.checkin,
                     checkout: state.checkout,
-                    rooms: state.selectedRooms,
-                    foods: state.selectedFoods,
+                    rooms: JSON.stringify(state.selectedRooms),
+                    foods: JSON.stringify(state.selectedFoods),
                     roomSubtotal: state.roomSubtotal,
                     foodSubtotal: state.foodSubtotal,
                     discount: state.discount,
@@ -475,11 +493,21 @@
                 };
 
                 try {
-                    // Logic for App Script
-                    alert("ส่งข้อมูลการจองเรียบร้อยแล้ว! ขอบคุณที่เลือกใช้บริการขนำลุงดำ แคมป์ปิ้ง");
-                    liff.closeWindow();
+                    const response = await fetch(BACKEND_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    
+                    if(result.status === 'success') {
+                        alert("ส่งข้อมูลการจองเรียบร้อยแล้ว! ขอบคุณที่เลือกใช้บริการขนำลุงดำ แคมป์ปิ้ง");
+                        liff.closeWindow();
+                    } else {
+                        throw new Error(result.message || 'Error from server');
+                    }
                 } catch (err) {
-                    alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง");
+                    console.error('Submit Error:', err);
+                    alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + err.message);
                 } finally {
                     document.getElementById('loading').classList.add('hidden');
                 }
