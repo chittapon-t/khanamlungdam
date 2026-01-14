@@ -49,7 +49,6 @@
                 const res = await fetch(API_URL);
                 const data = await res.json();
                 allData = data.bookings || [];
-                // Sort by latest date
                 allData.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
                 render(allData);
             } catch (e) {
@@ -63,8 +62,8 @@
             if (status === 'all') render(allData);
             else render(allData.filter(b => b.Status === status));
             
-            // Update UI Active Tab
-            event.target.parentElement.querySelectorAll('button').forEach(btn => {
+            const buttons = event.target.parentElement.querySelectorAll('button');
+            buttons.forEach(btn => {
                 btn.classList.remove('bg-emerald-800', 'text-white');
                 btn.classList.add('bg-white', 'text-gray-600');
             });
@@ -99,11 +98,11 @@
                         <div class="grid grid-cols-2 gap-2 my-3 p-3 bg-gray-50 rounded-xl border border-dashed border-gray-200">
                             <div>
                                 <p class="text-[10px] uppercase font-bold text-gray-400">เช็คอิน</p>
-                                <p class="text-sm font-bold text-emerald-800">${formatDate(b.CheckIn)}</p>
+                                <p class="text-sm font-bold text-emerald-800">${formatDateThai(b.CheckIn)}</p>
                             </div>
                             <div>
                                 <p class="text-[10px] uppercase font-bold text-gray-400">เช็คเอาท์</p>
-                                <p class="text-sm font-bold text-emerald-800">${formatDate(b.CheckOut)}</p>
+                                <p class="text-sm font-bold text-emerald-800">${formatDateThai(b.CheckOut)}</p>
                             </div>
                         </div>
 
@@ -116,7 +115,7 @@
                         <div class="flex justify-between items-center pt-4 border-t border-gray-100">
                             <div>
                                 <p class="text-[10px] text-gray-400">มัดจำที่รับแล้ว</p>
-                                <p class="text-lg font-bold text-emerald-600">฿${b.DepositAmount.toLocaleString()}</p>
+                                <p class="text-lg font-bold text-emerald-600">฿${Number(b.DepositAmount).toLocaleString()}</p>
                             </div>
                             <div class="flex space-x-2">
                                 <a href="${b.SlipURL}" target="_blank" class="bg-blue-50 text-blue-600 px-3 py-2 rounded-xl text-xs font-bold border border-blue-100">🔍 ดูสลิป</a>
@@ -147,9 +146,15 @@
             }
         }
 
-        function formatDate(dStr) {
-            const date = new Date(dStr);
-            return date.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+        // ฟังก์ชันแปลงวันที่เป็น วัน เดือน พ.ศ. (ภาษาไทย)
+        function formatDateThai(dateStr) {
+            if (!dateStr) return "-";
+            const date = new Date(dateStr);
+            const monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+            const day = date.getDate();
+            const month = monthNames[date.getMonth()];
+            const year = date.getFullYear() + 543;
+            return `${day} ${month} ${year}`;
         }
 
         window.onload = loadData;
