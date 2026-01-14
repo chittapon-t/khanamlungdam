@@ -6,464 +6,202 @@
     <title>แผงควบคุมแอดมิน - ขนำลุงดำ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
-    <!-- FullCalendar -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <style>
-        body { font-family: 'Kanit', sans-serif; padding-bottom: 100px; }
-        .tab-active { color: #059669 !important; border-top: 4px solid #059669; background: #f0fdf4; }
-        .card-confirmed { border-left: 8px solid #10b981; }
-        .card-pending { border-left: 8px solid #f59e0b; }
-        .card-canceled { border-left: 8px solid #ef4444; opacity: 0.8; }
+        body { font-family: 'Kanit', sans-serif; padding-bottom: 90px; }
+        .tab-active { color: #059669; border-top: 3px solid #059669; background: #f0fdf4; }
+        .card-confirmed { border-left: 6px solid #10b981; }
+        .card-pending { border-left: 6px solid #f59e0b; }
         .animate-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        #calendar { background: white; border-radius: 1.5rem; padding: 15px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-        .fc-toolbar-title { font-size: 1.1rem !important; font-weight: bold; color: #064e3b; }
-        .fc-button { background: #065f46 !important; border: none !important; font-size: 0.8rem !important; }
-        ::-webkit-scrollbar { display: none; }
-        .stat-card { transition: transform 0.2s; }
-        .stat-card:active { transform: scale(0.95); }
-        .filter-btn-active { background-color: #065f46; color: white; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-gray-50 text-gray-800">
 
     <!-- Loading Overlay -->
-    <div id="loading" class="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center hidden backdrop-blur-sm">
-        <div class="bg-white p-8 rounded-3xl text-center shadow-2xl">
-            <div class="animate-spin rounded-full h-12 w-12 border-4 border-emerald-600 border-t-transparent mx-auto"></div>
-            <p class="mt-4 font-bold text-emerald-900" id="loadingText">กำลังจัดการข้อมูล...</p>
+    <div id="loading" class="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-80">
+        <div class="flex flex-col items-center">
+            <div class="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+            <p class="mt-4 font-semibold text-green-700">กำลังโหลดข้อมูล...</p>
         </div>
     </div>
 
     <!-- Header -->
-    <header class="bg-emerald-900 text-white p-5 sticky top-0 z-40 shadow-xl flex justify-between items-center rounded-b-[2rem]">
-        <div>
-            <h1 class="font-bold text-xl" id="headerTitle">แดชบอร์ด</h1>
-            <p class="text-[10px] text-emerald-300 tracking-widest uppercase opacity-80">Management System v2.7</p>
-        </div>
-        <div class="flex gap-2">
-             <button onclick="fetchData()" class="p-3 bg-emerald-800 rounded-2xl active:scale-90 transition-all">
-                <svg class="w-6 h-6 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2.5" stroke-linecap="round"/></svg>
-            </button>
-        </div>
+    <header class="bg-white shadow-sm sticky top-0 z-30 px-4 py-3 border-b flex justify-between items-center">
+        <h1 id="pageTitle" class="text-xl font-bold text-green-800">หน้าหลัก</h1>
+        <button onclick="fetchData()" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        </button>
     </header>
 
-    <main class="p-4 max-w-2xl mx-auto min-h-screen">
-        
-        <!-- Section: หน้าแรก แดชบอร์ด -->
-        <section id="tab-home" class="tab-content hidden animate-in space-y-4">
+    <!-- Main Content Area -->
+    <main class="max-w-4xl mx-auto p-4">
+        <!-- Dashboard Home -->
+        <section id="tab-home" class="animate-in space-y-6">
             <div class="grid grid-cols-2 gap-4">
-                <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 stat-card">
-                    <p class="text-[10px] text-slate-400 font-bold uppercase">รายการจองวันนี้</p>
-                    <h2 id="stat-today-bookings" class="text-3xl font-bold text-emerald-700 mt-1">0</h2>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border text-center">
+                    <p class="text-xs text-gray-500 uppercase font-semibold">การจองวันนี้</p>
+                    <p id="todayCount" class="text-3xl font-bold text-green-600">0</p>
                 </div>
-                <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 stat-card">
-                    <p class="text-[10px] text-slate-400 font-bold uppercase">รอตรวจสอบ</p>
-                    <h2 id="stat-pending-bookings" class="text-3xl font-bold text-orange-500 mt-1">0</h2>
-                </div>
-                <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 stat-card col-span-2">
-                    <p class="text-[10px] text-slate-400 font-bold uppercase">ยอดมัดจำรวมเดือนนี้ (ยืนยันแล้ว)</p>
-                    <h2 id="stat-monthly-revenue" class="text-3xl font-bold text-slate-800 mt-1">฿0</h2>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border text-center">
+                    <p class="text-xs text-gray-500 uppercase font-semibold">รอตรวจสอบ</p>
+                    <p id="pendingCount" class="text-3xl font-bold text-orange-500">0</p>
                 </div>
             </div>
-
-            <!-- รายการจองล่าสุดที่รอตรวจ -->
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-                <h3 class="font-bold text-emerald-900 mb-4 flex items-center justify-between">
-                    <span class="flex items-center gap-2">⏳ รายการรอการตรวจสอบ</span>
-                    <button onclick="switchTab('bookings', 'รายการจองทั้งหมด'); filterStatus = 'รอตรวจสอบ'; renderCards();" class="text-xs text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">ดูทั้งหมด</button>
-                </h3>
-                <div id="quick-pending-list" class="space-y-3">
-                    <!-- รายการจะถูกใส่ด้วย JS -->
-                </div>
+            
+            <h2 class="text-lg font-bold">รายการจองล่าสุด</h2>
+            <div id="bookingList" class="space-y-4">
+                <!-- Data injected here -->
             </div>
         </section>
 
-        <!-- Section: ปฏิทิน -->
-        <section id="tab-calendar" class="tab-content hidden animate-in">
-            <div id="calendar" class="mb-4"></div>
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 grid grid-cols-2 gap-2 text-[10px] font-bold">
-                <div class="flex items-center bg-emerald-50 p-2 rounded-xl"><span class="w-3 h-3 bg-emerald-500 rounded-full mr-2"></span> ยืนยันแล้ว</div>
-                <div class="flex items-center bg-orange-50 p-2 rounded-xl"><span class="w-3 h-3 bg-orange-400 rounded-full mr-2"></span> รอตรวจสอบ</div>
-            </div>
+        <!-- Calendar View -->
+        <section id="tab-calendar" class="hidden animate-in">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border h-[600px]" id="calendar"></div>
         </section>
 
-        <!-- Section: รายการจองทั้งหมด -->
-        <section id="tab-bookings" class="tab-content hidden space-y-4 animate-in">
-            <!-- Search & Filter -->
-            <div class="space-y-3">
-                <div class="relative">
-                    <input type="text" id="searchBooking" placeholder="ค้นหาชื่อ, เบอร์, ID การจอง..." 
-                           class="w-full p-4 pl-12 rounded-2xl border-none shadow-sm bg-white focus:ring-2 focus:ring-emerald-500 transition-all"
-                           onkeyup="renderCards()">
-                    <svg class="w-6 h-6 absolute left-4 top-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2"/></svg>
+        <!-- Promotion & Settings -->
+        <section id="tab-settings" class="hidden animate-in space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border">
+                <h3 class="font-bold text-lg mb-4">จัดการโปรโมชั่น</h3>
+                <div class="flex gap-2">
+                    <input type="text" id="promoCode" placeholder="โค้ด" class="border p-2 rounded w-1/3">
+                    <input type="number" id="promoValue" placeholder="ลดกี่บาท" class="border p-2 rounded w-1/3">
+                    <button onclick="addPromo()" class="bg-green-600 text-white px-4 py-2 rounded flex-1 font-bold">เพิ่ม</button>
                 </div>
-                
-                <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                    <button onclick="setFilter('all')" id="filter-all" class="filter-btn-active whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 transition-all">ทั้งหมด</button>
-                    <button onclick="setFilter('รอตรวจสอบ')" id="filter-pending" class="bg-white whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 transition-all">รอตรวจสอบ</button>
-                    <button onclick="setFilter('ยืนยันแล้ว')" id="filter-confirmed" class="bg-white whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 transition-all">ยืนยันแล้ว</button>
-                </div>
-            </div>
-
-            <div id="allBookingCards" class="space-y-4"></div>
-        </section>
-
-        <!-- Section: ตั้งค่า -->
-        <section id="tab-settings" class="tab-content hidden space-y-6 animate-in">
-            <!-- Promo Codes -->
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-                <h3 class="font-bold text-emerald-900 mb-4 flex items-center">
-                    <span class="mr-2 text-xl">🎟️</span> จัดการโค้ดส่วนลด
-                </h3>
-                <div class="space-y-3">
-                    <input type="text" id="promoCode" placeholder="ระบุโค้ด (เช่น SUMMER20)" class="w-full bg-slate-50 p-3 rounded-xl border-none focus:ring-2 focus:ring-emerald-500">
-                    <div class="flex gap-2">
-                        <input type="number" id="promoValue" placeholder="จำนวนลด" class="flex-1 bg-slate-50 p-3 rounded-xl border-none">
-                        <select id="promoType" class="w-24 bg-slate-50 p-3 rounded-xl border-none font-bold text-emerald-700">
-                            <option value="บาท">บาท</option>
-                            <option value="%">%</option>
-                        </select>
-                    </div>
-                    <button onclick="addPromoCode()" class="w-full bg-emerald-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-emerald-100 active:scale-95 transition-all">บันทึกโค้ดใหม่</button>
-                </div>
-                <div id="promoList" class="mt-6 space-y-2 border-t pt-4"></div>
-            </div>
-
-            <!-- Special Dates -->
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-                <h3 class="font-bold text-emerald-900 mb-4 flex items-center">
-                    <span class="mr-2 text-xl">📅</span> วันพิเศษ (มัดจำ 100%)
-                </h3>
-                <div class="flex gap-2 mb-4">
-                    <input type="date" id="newSpecialDate" class="flex-1 bg-slate-50 p-3 rounded-xl border-none">
-                    <button onclick="addSpecialDate()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold">เพิ่ม</button>
-                </div>
-                <div id="specialDateList" class="flex flex-wrap gap-2"></div>
             </div>
         </section>
     </main>
 
     <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-100 p-2 flex justify-around z-50">
-        <button onclick="switchTab('home', 'แดชบอร์ด')" id="nav-home" class="flex-1 flex flex-col items-center py-2 transition-all rounded-2xl text-slate-400">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-width="2"/></svg>
-            <span class="text-[10px] mt-1 font-bold">หน้าแรก</span>
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around items-center h-16 shadow-lg z-40">
+        <button onclick="switchTab('home', 'หน้าหลัก')" class="flex flex-col items-center flex-1 py-2 nav-btn" id="btn-home">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <span class="text-[10px]">หน้าหลัก</span>
         </button>
-        <button onclick="switchTab('calendar', 'ปฏิทิน')" id="nav-calendar" class="flex-1 flex flex-col items-center py-2 transition-all rounded-2xl text-slate-400">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="2"/></svg>
-            <span class="text-[10px] mt-1 font-bold">ปฏิทิน</span>
+        <button onclick="switchTab('calendar', 'ตารางจอง')" class="flex flex-col items-center flex-1 py-2 nav-btn" id="btn-calendar">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <span class="text-[10px]">ปฏิทิน</span>
         </button>
-        <button onclick="switchTab('bookings', 'รายการจอง')" id="nav-bookings" class="flex-1 flex flex-col items-center py-2 transition-all rounded-2xl text-slate-400">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7" stroke-width="2"/></svg>
-            <span class="text-[10px] mt-1 font-bold">รายการ</span>
-        </button>
-        <button onclick="switchTab('settings', 'ตั้งค่า')" id="nav-settings" class="flex-1 flex flex-col items-center py-2 transition-all rounded-2xl text-slate-400">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-width="2"/></svg>
-            <span class="text-[10px] mt-1 font-bold">ตั้งค่า</span>
+        <button onclick="switchTab('settings', 'ตั้งค่า')" class="flex flex-col items-center flex-1 py-2 nav-btn" id="btn-settings">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            <span class="text-[10px]">ตั้งค่า</span>
         </button>
     </nav>
 
     <script>
-        // API URL จาก Google Apps Script
-        const API_URL = "https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec";
-        
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzfE2-6_B6UqN1nB7k9W5W8X9T9U7Y9U7Y/exec'; // **ใส่ URL ของคุณที่นี่**
         let allData = [];
-        let specialDates = [];
-        let promoCodes = [];
-        let calendar = null;
-        let filterStatus = 'all';
 
-        // จัดการ UI Tabs
-        function switchTab(tab, title) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-            document.getElementById(`tab-${tab}`).classList.remove('hidden');
-            document.getElementById('headerTitle').innerText = title;
-            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('tab-active', 'text-slate-400'));
-            document.getElementById(`nav-${tab}`).classList.add('tab-active');
-            
-            if(tab === 'calendar') {
-                setTimeout(() => {
-                    if (!calendar) initCalendar();
-                    calendar.render();
-                    calendar.updateSize();
-                }, 100);
-            }
-            window.scrollTo(0,0);
-        }
-
-        // ตัวกรองสถานะ
-        function setFilter(status) {
-            filterStatus = status;
-            document.querySelectorAll('#tab-bookings button').forEach(b => b.classList.remove('filter-btn-active', 'bg-white'));
-            const btnId = status === 'all' ? 'filter-all' : (status === 'รอตรวจสอบ' ? 'filter-pending' : 'filter-confirmed');
-            document.getElementById(btnId).classList.add('filter-btn-active');
-            renderCards();
-        }
-
-        // ปฏิทิน
-        function initCalendar() {
-            calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
-                initialView: 'dayGridMonth',
-                locale: 'th',
-                height: 'auto',
-                headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
-                events: prepareEvents(),
-                eventClick: (info) => {
-                    document.getElementById('searchBooking').value = info.event.extendedProps.id;
-                    switchTab('bookings', 'ค้นหารายการ');
-                    setFilter('all');
-                }
-            });
-        }
-
-        function prepareEvents() {
-            return allData.filter(i => i.Status !== 'ยกเลิก').map(item => {
-                const start = new Date(item.CheckIn);
-                const end = new Date(item.CheckOut);
-                const displayEnd = new Date(end);
-                displayEnd.setDate(displayEnd.getDate() + 1);
-                
-                return {
-                    title: `${item.Rooms.substring(0,5)}..: ${item.CustomerName}`,
-                    start: start.toISOString().split('T')[0],
-                    end: displayEnd.toISOString().split('T')[0],
-                    color: item.Status === 'ยืนยันแล้ว' ? '#10b981' : '#fbbf24',
-                    extendedProps: { id: item.BookingID }
-                };
-            });
-        }
-
-        // ดึงข้อมูล
         async function fetchData() {
             document.getElementById('loading').classList.remove('hidden');
             try {
-                const res = await fetch(API_URL);
-                const data = await res.json();
-                allData = data.bookings || [];
-                specialDates = data.specialDates || [];
-                promoCodes = data.promoCodes || [];
-
-                allData.sort((a,b) => new Date(a.CheckIn) - new Date(b.CheckIn));
-
-                updateStats();
-                renderCards();
-                renderSettings();
-                if(calendar) {
-                    calendar.removeAllEvents();
-                    calendar.addEventSource(prepareEvents());
-                }
-            } catch (e) {
-                console.error(e);
-                alert("ไม่สามารถดึงข้อมูลได้");
+                const response = await fetch(API_URL);
+                const result = await response.json();
+                allData = result.bookings || [];
+                renderDashboard();
+                renderCalendar();
+            } catch (err) {
+                alert("ไม่สามารถดึงข้อมูลได้: " + err);
             } finally {
                 document.getElementById('loading').classList.add('hidden');
             }
         }
 
-        function updateStats() {
-            const todayStr = new Date().toISOString().split('T')[0];
-            const now = new Date();
+        function renderDashboard() {
+            const list = document.getElementById('bookingList');
+            const today = new Date().toISOString().split('T')[0];
             
-            const todayBookings = allData.filter(i => i.CheckIn.includes(todayStr)).length;
-            const pendingList = allData.filter(i => i.Status === 'รอตรวจสอบ');
-            const monthlyRevenue = allData
-                .filter(i => {
-                    const d = new Date(i.CheckIn);
-                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && i.Status === 'ยืนยันแล้ว';
-                })
-                .reduce((sum, item) => sum + Number(item.Deposit), 0);
+            let html = '';
+            let counts = { today: 0, pending: 0 };
 
-            document.getElementById('stat-today-bookings').innerText = todayBookings;
-            document.getElementById('stat-pending-bookings').innerText = pendingList.length;
-            document.getElementById('stat-monthly-revenue').innerText = '฿' + monthlyRevenue.toLocaleString();
-
-            const quickList = document.getElementById('quick-pending-list');
-            if(pendingList.length === 0) {
-                quickList.innerHTML = `<p class="text-center text-slate-400 py-6 text-xs italic">เย้! ไม่มีรายการค้างตรวจสอบ</p>`;
-            } else {
-                quickList.innerHTML = pendingList.slice(0, 5).map(item => `
-                    <div class="flex items-center justify-between p-4 bg-orange-50/50 rounded-2xl border border-orange-100">
-                        <div>
-                            <p class="font-bold text-sm text-slate-800">${item.CustomerName}</p>
-                            <p class="text-[10px] text-slate-500">${item.Rooms} • ${new Date(item.CheckIn).toLocaleDateString('th-TH')}</p>
-                        </div>
-                        <button onclick="viewBookingDetail('${item.BookingID}')" class="bg-orange-500 text-white px-4 py-2 rounded-xl text-[10px] font-bold shadow-sm active:scale-95">ตรวจสลิป</button>
-                    </div>
-                `).join('');
-            }
-        }
-
-        function viewBookingDetail(id) {
-            document.getElementById('searchBooking').value = id;
-            setFilter('all');
-            switchTab('bookings', 'ค้นหารายการ');
-        }
-
-        // Render Cards
-        function renderCards() {
-            const query = document.getElementById('searchBooking').value.toLowerCase();
-            const container = document.getElementById('allBookingCards');
-            
-            let filtered = allData.filter(i => 
-                (i.CustomerName || "").toLowerCase().includes(query) || 
-                (i.BookingID || "").toLowerCase().includes(query) ||
-                (i.Tel || "").includes(query)
-            );
-
-            if(filterStatus !== 'all') {
-                filtered = filtered.filter(i => i.Status === filterStatus);
-            }
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="text-center py-20 text-slate-400 text-sm">ไม่พบข้อมูลที่ต้องการ</div>`;
-                return;
-            }
-
-            container.innerHTML = filtered.map(item => {
-                let foods = [];
-                try { foods = JSON.parse(item.Foods || "[]"); } catch(e) { foods = []; }
-                const foodHtml = foods.map(f => `
-                    <div class="flex justify-between border-b border-dashed border-slate-200 py-1">
-                        <span>${f.name}</span>
-                        <span class="font-bold">x${f.qty}</span>
-                    </div>
-                `).join('');
+            allData.slice().reverse().forEach(bk => {
+                const statusClass = bk['สถานะ'] === 'confirmed' ? 'card-confirmed' : 'card-pending';
+                if(bk['สถานะ'] === 'pending') counts.pending++;
                 
-                const cin = new Date(item.CheckIn).toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'2-digit' });
-                const cout = new Date(item.CheckOut).toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'2-digit' });
+                // ตรวจสอบวันที่เช็คอิน (เปลี่ยนตามรูปแบบข้อมูลของคุณ)
+                const checkInDate = new Date(bk['วันที่เข้าพัก']).toISOString().split('T')[0];
+                if(checkInDate === today) counts.today++;
 
-                return `
-                <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 ${item.Status === 'ยืนยันแล้ว' ? 'card-confirmed' : 'card-pending'} animate-in">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="max-w-[70%]">
-                            <p class="text-[9px] text-emerald-600 font-bold uppercase tracking-widest">${item.BookingID}</p>
-                            <h3 class="font-bold text-lg text-slate-800 truncate">${item.CustomerName}</h3>
-                            <div class="flex flex-wrap gap-1 mt-1">
-                                <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded-lg">📞 ${item.Tel || '-'}</span>
-                                <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-lg">👤 ${item.Guests || 1} ท่าน</span>
-                            </div>
+                // รายการอาหาร (จัดการ JSON)
+                let foodDisplay = "-";
+                try {
+                    const foods = JSON.parse(bk['ข้อมูลอาหาร'] || "[]");
+                    if(foods.length > 0) foodDisplay = foods.map(f => `${f.name} x${f.qty}`).join(", ");
+                } catch(e) {}
+
+                html += `
+                <div class="bg-white p-4 rounded-2xl shadow-sm border ${statusClass} animate-in relative">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="text-xs text-gray-400 font-mono">${bk['รหัสการจอง']}</p>
+                            <h3 class="font-bold text-lg">${bk['ชื่อลูกค้า']}</h3>
                         </div>
-                        <span class="text-[10px] px-3 py-1.5 rounded-full font-bold shadow-sm ${item.Status === 'ยืนยันแล้ว' ? 'bg-emerald-500 text-white' : 'bg-orange-400 text-white'}">
-                            ${item.Status}
+                        <span class="px-2 py-1 rounded-full text-[10px] uppercase font-bold ${bk['สถานะ'] === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
+                            ${bk['สถานะ'] === 'confirmed' ? 'สำเร็จ' : 'รอตรวจสอบ'}
                         </span>
                     </div>
                     
-                    <div class="bg-slate-50 p-4 rounded-2xl text-xs space-y-2 mb-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-slate-400">ระยะเวลา:</span>
-                            <span class="font-bold text-emerald-900 bg-white px-2 py-1 rounded-lg border border-slate-100">${cin} - ${cout}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">ห้องพัก:</span>
-                            <span class="font-bold text-right">${item.Rooms}</span>
-                        </div>
-                        <div class="pt-2 border-t border-slate-200">
-                            <p class="text-slate-400 mb-2 font-bold uppercase text-[9px]">อาหารที่สั่ง:</p>
-                            ${foodHtml || '<p class="italic text-slate-300">ไม่มีรายการอาหาร</p>'}
-                        </div>
+                    <div class="grid grid-cols-2 gap-y-2 text-sm">
+                        <p class="text-gray-500">📞 ${bk['เบอร์โทรศัพท์']}</p>
+                        <p class="text-gray-500">📅 ${new Date(bk['วันที่เข้าพัก']).toLocaleDateString('th-TH')}</p>
+                        <p class="text-gray-500 col-span-2">🍛 ${foodDisplay}</p>
                     </div>
 
-                    <div class="flex justify-between items-end">
-                        <div>
-                            <p class="text-[9px] text-slate-400 uppercase font-bold">ยอดมัดจำที่โอนมา</p>
-                            <p class="text-2xl font-bold text-emerald-700">฿${Number(item.Deposit).toLocaleString()}</p>
-                        </div>
-                        <div class="flex gap-2">
-                             <a href="${item.SlipURL}" target="_blank" class="bg-slate-800 text-white px-4 py-3 rounded-xl text-[10px] font-bold active:scale-95 shadow-lg">ดูสลิป</a>
-                             <button onclick="deleteItem('${item.BookingID}')" class="bg-red-50 text-red-500 p-3 rounded-xl active:scale-95 border border-red-100">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round"/></svg>
-                             </button>
+                    <div class="mt-4 pt-4 border-t flex justify-between items-center">
+                        <p class="font-bold text-green-700 text-lg">฿${Number(bk['ยอดรวมทั้งสิ้น']).toLocaleString()}</p>
+                        <div class="space-x-2">
+                            <a href="${bk['ลิงก์สลิป']}" target="_blank" class="text-blue-600 text-sm font-semibold underline">ดูสลิป</a>
+                            ${bk['สถานะ'] === 'pending' ? `<button onclick="updateStatus('${bk['รหัสการจอง']}', 'confirmed')" class="bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-sm">ยืนยัน</button>` : ''}
                         </div>
                     </div>
-                    ${item.Status === 'รอตรวจสอบ' ? `
-                        <button onclick="confirmBooking('${item.BookingID}')" class="w-full mt-4 bg-emerald-600 text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-emerald-100 active:scale-95">
-                            ✅ ยืนยันการชำระเงิน (ส่ง LINE หาลูกค้า)
-                        </button>
-                    ` : ''}
-                </div>
-                `;
-            }).join('');
+                </div>`;
+            });
+
+            list.innerHTML = html || '<p class="text-center text-gray-400 py-10">ไม่พบรายการจอง</p>';
+            document.getElementById('todayCount').innerText = counts.today;
+            document.getElementById('pendingCount').innerText = counts.pending;
         }
 
-        // จัดการ Settings
-        function renderSettings() {
-            const dateList = document.getElementById('specialDateList');
-            dateList.innerHTML = specialDates.map(date => `
-                <div class="bg-white text-orange-700 px-4 py-2 rounded-xl text-xs font-bold border border-orange-200 flex items-center shadow-sm">
-                    <span>${new Date(date).toLocaleDateString('th-TH')}</span>
-                    <button onclick="removeSetting('date', '${date}')" class="ml-2 text-orange-300 hover:text-red-500 font-bold text-lg">&times;</button>
-                </div>
-            `).join('') || '<p class="text-[10px] text-slate-400 italic">ไม่มีวันพิเศษ</p>';
-
-            const pList = document.getElementById('promoList');
-            pList.innerHTML = promoCodes.map(p => `
-                <div class="bg-white border border-slate-100 rounded-2xl p-4 flex justify-between items-center shadow-sm">
-                    <div>
-                        <span class="font-bold text-emerald-800 text-sm">${p.code}</span>
-                        <p class="text-[10px] text-slate-500">ลด ${Number(p.value).toLocaleString()} ${p.type}</p>
-                    </div>
-                    <button onclick="removeSetting('promo', '${p.code}')" class="text-red-400 p-2 hover:bg-red-50 rounded-xl transition-all">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2"/></svg>
-                    </button>
-                </div>
-            `).join('') || '<p class="text-xs text-slate-400 text-center py-4 italic">ยังไม่มีโค้ดส่วนลด</p>';
-        }
-
-        // Actions
-        async function runAction(data, loadingMsg) {
-            document.getElementById('loadingText').innerText = loadingMsg;
+        async function updateStatus(id, status) {
+            if(!confirm('ยืนยันสถานะการจองนี้ใช่หรือไม่?')) return;
             document.getElementById('loading').classList.remove('hidden');
             try {
-                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(data) });
-                const result = await response.json();
-                if(result.status === 'success') {
-                    await fetchData();
-                } else {
-                    alert('ไม่สำเร็จ: ' + result.message);
-                }
-            } catch (e) {
-                alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-            } finally {
-                document.getElementById('loading').classList.add('hidden');
-            }
+                await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'updateStatus', id: id, status: status })
+                });
+                fetchData();
+            } catch (err) { alert("เกิดข้อผิดพลาด"); }
         }
 
-        function confirmBooking(id) {
-            if(!confirm('ยืนยันว่าสลิปถูกต้อง? ระบบจะส่ง LINE แจ้งลูกค้าทันที')) return;
-            runAction({ action: 'updateStatus', bookingId: id, status: 'ยืนยันแล้ว' }, 'กำลังยืนยันและส่งข้อความ...');
+        function renderCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'th',
+                events: allData.map(bk => ({
+                    title: bk['ชื่อลูกค้า'],
+                    start: bk['วันที่เข้าพัก'],
+                    end: bk['วันที่ออก'],
+                    backgroundColor: bk['สถานะ'] === 'confirmed' ? '#10b981' : '#f59e0b',
+                    borderColor: 'transparent'
+                })),
+                headerToolbar: { left: 'prev,next', center: 'title', right: 'today' }
+            });
+            calendar.render();
         }
 
-        function deleteItem(id) {
-            if(!confirm('🚨 ยืนยันการลบรายการจองนี้?\nข้อมูลใน Google Sheet จะหายไปถาวร')) return;
-            runAction({ action: 'deleteBooking', bookingId: id }, 'กำลังลบข้อมูล...');
+        function switchTab(id, title) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.getElementById('tab-' + id).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('tab-active'));
+            document.getElementById('btn-' + id).classList.add('tab-active');
+            document.getElementById('pageTitle').innerText = title;
+            if(id === 'calendar') setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
         }
 
-        function addPromoCode() {
-            const code = document.getElementById('promoCode').value.trim().toUpperCase();
-            const value = document.getElementById('promoValue').value;
-            const type = document.getElementById('promoType').value;
-            if(!code || !value) return alert('กรุณากรอกข้อมูลโค้ดให้ครบ');
-            runAction({ action: 'addPromo', code, value, type }, 'กำลังบันทึกโค้ด...');
-            document.getElementById('promoCode').value = '';
-            document.getElementById('promoValue').value = '';
-        }
-
-        function addSpecialDate() {
-            const date = document.getElementById('newSpecialDate').value;
-            if(!date) return alert('กรุณาเลือกวันที่');
-            runAction({ action: 'addSpecialDate', date }, 'กำลังบันทึกวันพิเศษ...');
-        }
-
-        function removeSetting(type, id) {
-            if(!confirm('ยืนยันการลบ?')) return;
-            runAction({ action: 'removeSetting', type, id }, 'กำลังลบ...');
-        }
-
-        window.onload = () => {
-            fetchData();
-            switchTab('home', 'แดชบอร์ด');
-        };
+        window.onload = fetchData;
     </script>
 </body>
 </html>
