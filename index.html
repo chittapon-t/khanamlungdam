@@ -28,7 +28,7 @@
         <!-- Header -->
         <div class="bg-emerald-900 text-white p-6 rounded-b-[2.5rem] shadow-lg">
             <h1 class="text-2xl font-semibold">ขนำลุงดำ แคมป์ปิ้ง</h1>
-            <p class="text-emerald-200 text-sm">จองห้องพักออนไลน์ (จองล่วงหน้า 1 วัน)</p>
+            <p class="text-emerald-200 text-sm">จองห้องพักออนไลน์</p>
         </div>
 
         <!-- Stepper -->
@@ -53,10 +53,7 @@
                         <input type="date" id="checkout" class="w-full bg-transparent font-semibold outline-none text-emerald-800">
                     </div>
                 </div>
-                <div class="p-4 bg-amber-50 rounded-xl text-amber-800 text-xs flex gap-3">
-                    <span class="text-lg">⚠️</span>
-                    <p>ขออภัยค่ะ ระบบไม่เปิดรับจองในวันที่เข้าพักโดยตรง ท่านต้องจองล่วงหน้าอย่างน้อย 1 วันค่ะ</p>
-                </div>
+                
             </div>
 
             <!-- STEP 2: ROOMS -->
@@ -106,7 +103,6 @@
                 <div class="flex flex-col items-center p-4 border-2 border-dashed border-emerald-200 rounded-[2rem] mb-6">
                     <img id="qrCodeImg" class="w-48 h-48 rounded-xl mb-3">
                     <p class="font-bold text-gray-800">พร้อมเพย์ 061-592-4262</p>
-                    <p class="font-bold text-gray-800">อลงกต ทวีผ่อง</p>
                 </div>
 
                 <div class="mb-10">
@@ -147,8 +143,6 @@
             { id: 'f1', name: 'ชุดหมูกระทะลุงดำ', price: 390 },
             { id: 'f2', name: 'ชุดไก่กระทะลุงดำ', price: 390 },
             { id: 'f3', name: 'ชุดชาบูหมูลุงดำ', price: 390 }
-            { id: 'f4', name: 'ชุดชาบูไก่ลุงดำ', price: 390 }
-            { id: 'f5', name: 'เซ็ตอาหารพื้นบ้าน', price: 390 }
         ];
 
         let state = {
@@ -169,7 +163,6 @@
             try { await liff.init({ liffId: LIFF_ID }); await fetchData(); } catch(e){}
             hideLoading();
             
-            // ตั้งค่าวันที่เริ่มต้นคือ "วันพรุ่งนี้"
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             const afterTomorrow = new Date(tomorrow);
@@ -178,7 +171,6 @@
             const checkinEl = document.getElementById('checkin');
             const checkoutEl = document.getElementById('checkout');
 
-            // ล็อคไม่ให้เลือกวันก่อนพรุ่งนี้
             const minDateStr = formatDate(tomorrow);
             checkinEl.min = minDateStr;
             checkoutEl.min = formatDate(afterTomorrow);
@@ -213,25 +205,25 @@
 
         async function nextStep() {
             if(state.step === 1) {
-                state.checkin = document.getElementById('checkin').value;
-                state.checkout = document.getElementById('checkout').value;
+                const inVal = document.getElementById('checkin').value;
+                const outVal = document.getElementById('checkout').value;
                 
-                if(!state.checkin || !state.checkout) return alert("เลือกวันที่ก่อน");
+                if(!inVal || !outVal) return alert("เลือกวันที่ก่อน");
 
+                // เปรียบเทียบวันที่แบบตัดเวลาทิ้ง (ใช้ String เปรียบเทียบหรือตัดเวลา)
                 const today = new Date();
-                today.setHours(0,0,0,0);
-                const checkinDate = new Date(state.checkin);
-                checkinDate.setHours(0,0,0,0);
-
-                // ตรวจสอบ Logic: ห้ามจองวันเดียวกัน (ต้องจองล่วงหน้า 1 วันขึ้นไป)
-                if(checkinDate <= today) {
-                    return alert("ขออภัยค่ะ ต้องจองล่วงหน้าอย่างน้อย 1 วัน (ไม่สามารถจองเข้าพักในวันนี้ได้)");
+                const todayStr = formatDate(today);
+                
+                if(inVal <= todayStr) {
+                    return alert("ขออภัยค่ะ ต้องจองล่วงหน้าอย่างน้อย 1 วันค่ะ");
                 }
 
-                if(new Date(state.checkout) <= checkinDate) {
+                if(outVal <= inVal) {
                     return alert("วันที่เช็คเอาท์ต้องอยู่หลังวันที่เช็คอิน");
                 }
 
+                state.checkin = inVal;
+                state.checkout = outVal;
                 state.currentRate = getDepositRate(state.checkin);
                 state.activePromo = null;
             }
@@ -256,7 +248,7 @@
         function renderRooms() {
             const list = document.getElementById('roomList'); list.innerHTML = '';
             roomData.forEach(room => {
-                const isBooked = state.bookings.some(b => b.Status !== 'ยกเลิก' && (b.RoomsInfo || "").includes(room.name) && (new Date(state.checkin) < new Date(b.CheckOut) && new Date(state.checkout) > new Date(b.CheckIn)));
+                const isBooked = state.bookings.some(b => b.Status !== 'ยกเลิก' && (b.RoomsInfo || "").includes(room.name) && (state.checkin < b.CheckOut && state.checkout > b.CheckIn));
                 const selected = state.selectedRooms.find(r => r.id === room.id);
                 const card = document.createElement('div');
                 card.className = `bg-white p-3 rounded-2xl border-2 transition-all ${isBooked ? 'card-disabled' : (selected ? 'card-selected shadow-lg' : 'border-gray-100')}`;
@@ -339,7 +331,6 @@
 
             document.getElementById('summaryTotal').innerText = `฿${state.total.toLocaleString()}`;
             document.getElementById('depositAmount').innerText = `฿${state.deposit.toLocaleString()}`;
-            document.getElementById('depositText').innerText = `* มัดจำห้อง ${state.currentRate}% (หลังหักส่วนลด) + ค่าอาหารเต็มจำนวน`;
             document.getElementById('qrCodeImg').src = `https://promptpay.io/0615924262/${state.deposit}.png`;
         }
 
@@ -381,7 +372,7 @@
                         })
                     });
                     const data = await res.json();
-                    if(data.status === 'success') { alert("จองสำเร็จ! กรุณารอแอดมินตรวจสอบความถูกต้องของสลิปค่ะ"); liff.closeWindow(); }
+                    if(data.status === 'success') { alert("จองสำเร็จ! กรุณารอแอดมินตรวจสอบสลิปค่ะ"); liff.closeWindow(); }
                     else alert("ผิดพลาด: " + data.message);
                 } catch (e) { alert("เกิดข้อผิดพลาดในการเชื่อมต่อ"); }
                 finally { hideLoading(); }
