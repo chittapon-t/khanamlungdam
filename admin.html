@@ -1,96 +1,154 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <title>ระบบหลังบ้าน ขนำลุงดำ</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
-  <style>body { font-family: 'Kanit'; }</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | ขนำลุงดำ แคมป์ปิ้ง</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
+        .sidebar-link.active { background-color: #1a5f7a; color: white; }
+    </style>
 </head>
-<body class="bg-gray-100 flex">
+<body class="flex flex-col md:flex-row min-h-screen">
 
-  <!-- Sidebar -->
-  <aside class="w-64 bg-emerald-900 text-white min-h-screen p-6">
-    <h1 class="text-xl font-bold mb-8">Admin Dashboard</h1>
-    <nav class="space-y-4">
-      <a href="#" class="block p-2 hover:bg-emerald-800 rounded">รายการจองล่าสุด</a>
-      <a href="#" class="block p-2 hover:bg-emerald-800 rounded">จัดการโค้ดส่วนลด</a>
-      <a href="#" class="block p-2 hover:bg-emerald-800 rounded">ตั้งค่าวันพิเศษ</a>
-      <a href="#" class="block p-2 hover:bg-emerald-800 rounded">ปิดให้บริการ</a>
-    </nav>
-  </aside>
+    <!-- Sidebar -->
+    <aside class="w-full md:w-64 bg-white border-r shadow-sm p-6 space-y-4">
+        <h2 class="text-xl font-bold text-[#1a5f7a] mb-8">Admin Panel</h2>
+        <nav class="space-y-1">
+            <a href="#" class="sidebar-link active flex items-center p-3 rounded-lg transition-all">
+                <i class="fas fa-home w-8"></i> แดชบอร์ด
+            </a>
+            <a href="#" class="sidebar-link flex items-center p-3 rounded-lg text-gray-600 hover:bg-stone-100">
+                <i class="fas fa-calendar-check w-8"></i> รายการจอง
+            </a>
+            <a href="#" class="sidebar-link flex items-center p-3 rounded-lg text-gray-600 hover:bg-stone-100">
+                <i class="fas fa-tags w-8"></i> โค้ดส่วนลด
+            </a>
+            <a href="#" class="sidebar-link flex items-center p-3 rounded-lg text-gray-600 hover:bg-stone-100">
+                <i class="fas fa-exclamation-circle w-8"></i> วันพิเศษ
+            </a>
+        </nav>
+    </aside>
 
-  <!-- Main Content -->
-  <main class="flex-1 p-10">
-    <header class="flex justify-between items-center mb-8">
-      <h2 class="text-2xl font-bold text-gray-800">จัดการรายการจอง</h2>
-      <button onclick="refreshData()" class="bg-emerald-600 text-white px-4 py-2 rounded shadow">รีเฟรชข้อมูล</button>
-    </header>
+    <!-- Main Content -->
+    <main id="admin-app" class="flex-1 p-4 md:p-8 overflow-y-auto">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-800">รายการจองล่าสุด</h1>
+            <button @click="fetchBookings" class="p-2 text-blue-600 hover:bg-blue-50 rounded-full">
+                <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
+            </button>
+        </header>
 
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-      <table class="w-full text-left">
-        <thead class="bg-gray-50 border-b">
-          <tr>
-            <th class="p-4">Booking ID</th>
-            <th class="p-4">ผู้จอง</th>
-            <th class="p-4">วันที่เข้าพัก</th>
-            <th class="p-4">ยอดมัดจำ</th>
-            <th class="p-4">สถานะ</th>
-            <th class="p-4">จัดการ</th>
-          </tr>
-        </thead>
-        <tbody id="booking-table-body">
-          <!-- Rows injected here -->
-          <tr>
-            <td colspan="6" class="p-10 text-center text-gray-400">กำลังโหลดข้อมูล...</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </main>
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-blue-500">
+                <p class="text-sm text-gray-500">รอการตรวจสอบ</p>
+                <p class="text-3xl font-bold">{{ pendingCount }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-green-500">
+                <p class="text-sm text-gray-500">ยืนยันแล้ววันนี้</p>
+                <p class="text-3xl font-bold">{{ confirmedToday }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-amber-500">
+                <p class="text-sm text-gray-500">ยอดเงินรวม (รอเข้า)</p>
+                <p class="text-3xl font-bold">฿{{ totalPendingAmount }}</p>
+            </div>
+        </div>
 
-  <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec";
+        <!-- Booking Table -->
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden border">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="p-4 text-xs font-bold uppercase text-gray-500">ID / ชื่อ</th>
+                            <th class="p-4 text-xs font-bold uppercase text-gray-500">ห้องพัก</th>
+                            <th class="p-4 text-xs font-bold uppercase text-gray-500">วันที่</th>
+                            <th class="p-4 text-xs font-bold uppercase text-gray-500">ยอดมัดจำ</th>
+                            <th class="p-4 text-xs font-bold uppercase text-gray-500">สถานะ</th>
+                            <th class="p-4 text-xs font-bold uppercase text-gray-500">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        <tr v-for="b in bookings" :key="b.เลขที่การจอง" class="hover:bg-stone-50 transition-colors">
+                            <td class="p-4">
+                                <p class="font-bold text-sm">{{ b.เลขที่การจอง }}</p>
+                                <p class="text-xs text-gray-500">{{ b.ชื่อผู้จอง }}</p>
+                            </td>
+                            <td class="p-4 text-sm">{{ b.ห้องพัก }}</td>
+                            <td class="p-4 text-sm">{{ b.วันที่เข้าพัก }}</td>
+                            <td class="p-4 text-sm font-bold">฿{{ b.มัดจำ }}</td>
+                            <td class="p-4">
+                                <span class="px-2 py-1 rounded-full text-[10px] font-bold"
+                                      :class="b.สถานะ === 'ยืนยันแล้ว' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'">
+                                    {{ b.สถานะ }}
+                                </span>
+                            </td>
+                            <td class="p-4 space-x-2">
+                                <a :href="b.ลิงก์สลิป" target="_blank" class="text-blue-500 hover:text-blue-700 text-sm">
+                                    <i class="fas fa-image"></i>
+                                </a>
+                                <button v-if="b.สถานะ !== 'ยืนยันแล้ว'" @click="approveBooking(b)" class="bg-green-500 text-white px-3 py-1 rounded-lg text-xs font-bold">ยืนยัน</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
 
-    async function refreshData() {
-      const res = await fetch(`${GAS_URL}?action=getInitialData`);
-      const data = await res.json();
-      const tbody = document.getElementById('booking-table-body');
-      
-      tbody.innerHTML = data.bookings.map(b => `
-        <tr class="border-b">
-          <td class="p-4 font-mono text-sm">${b.เลขที่การจอง}</td>
-          <td class="p-4">${b.ชื่อผู้จอง}<br><span class="text-xs text-gray-400">${b.เบอร์โทรศัพท์}</span></td>
-          <td class="p-4">${b.วันที่เข้าพัก}</td>
-          <td class="p-4 text-emerald-600 font-bold">${b.มัดจำ}</td>
-          <td class="p-4">
-            <span class="px-2 py-1 rounded-full text-xs ${b.สถานะ === 'ยืนยันแล้ว' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
-              ${b.สถานะ}
-            </span>
-          </td>
-          <td class="p-4">
-            <button class="text-blue-600 text-sm hover:underline" onclick="viewSlip('${b.ลิงก์สลิป}')">ดูสลิป</button>
-            <button class="ml-2 bg-green-500 text-white px-2 py-1 rounded text-xs" onclick="updateStatus('${b.เลขที่การจอง}', 'ยืนยันแล้ว')">ยืนยัน</button>
-          </td>
-        </tr>
-      `).join('');
-    }
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp } = Vue;
+        const API_URL = "https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec"; // เปลี่ยนตรงนี้
 
-    function viewSlip(url) {
-      if(url) window.open(url, '_blank');
-      else alert("ไม่มีรูปสลิป");
-    }
-
-    async function updateStatus(id, status) {
-      if(!confirm(`ยืนยันการเปลี่ยนสถานะเป็น ${status}?`)) return;
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: "updateStatus", bookingId: id, status: status })
-      });
-      refreshData();
-    }
-
-    window.onload = refreshData;
-  </script>
+        createApp({
+            data() {
+                return {
+                    bookings: [],
+                    loading: false
+                }
+            },
+            computed: {
+                pendingCount() { return this.bookings.filter(b => b.สถานะ === 'รอตรวจสอบ').length; },
+                confirmedToday() { return this.bookings.filter(b => b.สถานะ === 'ยืนยันแล้ว').length; },
+                totalPendingAmount() {
+                    return this.bookings
+                        .filter(b => b.สถานะ === 'รอตรวจสอบ')
+                        .reduce((sum, b) => sum + Number(b.มัดจำ), 0)
+                        .toLocaleString();
+                }
+            },
+            mounted() {
+                this.fetchBookings();
+            },
+            methods: {
+                async fetchBookings() {
+                    this.loading = true;
+                    const res = await fetch(API_URL + "?action=getBookings");
+                    this.bookings = await res.json();
+                    this.loading = false;
+                },
+                async approveBooking(booking) {
+                    if(!confirm(`ยืนยันการรับเงินมัดจำ ฿${booking.มัดจำ} จากคุณ ${booking.ชื่อผู้จอง}?`)) return;
+                    
+                    const res = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'updateStatus',
+                            bookingId: booking.เลขที่การจอง,
+                            status: 'ยืนยันแล้ว'
+                        })
+                    });
+                    
+                    alert("ยืนยันสำเร็จ! ระบบจะส่ง Flex Message แจ้งลูกค้าอัตโนมัติ");
+                    this.fetchBookings();
+                }
+            }
+        }).mount('#admin-app');
+    </script>
 </body>
 </html>
