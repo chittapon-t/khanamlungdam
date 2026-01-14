@@ -149,11 +149,9 @@
     </div>
 
     <script>
-        // LIFF & Backend Configuration
         const LIFF_ID = "2008863563-tuai5kaC"; 
         const PROMPTPAY_ID = "0615924262";
-        // URL จาก Code.gs ที่ Deploy เป็น Web App
-        const BACKEND_URL = "https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec"; 
+        const BACKEND_URL = "https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec";
         
         let state = {
             currentStep: 1,
@@ -212,7 +210,7 @@
 
         async function fetchConfig() {
             try {
-                const response = await fetch(`${BACKEND_URL}?action=getConfig`);
+                const response = await fetch(BACKEND_URL);
                 const data = await response.json();
                 state.specialDates = data.specialDates || [];
                 state.promoCodes = data.promoCodes || [];
@@ -231,12 +229,9 @@
 
                 const busyRooms = [];
                 allBookings.forEach(booking => {
-                    if (booking.Status === 'ยกเลิก' || booking.Status === 'คืนเงินแล้ว') return;
-                    
+                    if (booking.Status === 'ยกเลิก') return;
                     const bIn = new Date(booking.CheckIn);
                     const bOut = new Date(booking.CheckOut);
-                    
-                    // Overlap logic: (StartA < EndB) and (EndA > StartB)
                     if (selIn < bOut && selOut > bIn) {
                         const roomsInBooking = (booking.RoomsInfo || "").split(', ');
                         roomsInBooking.forEach(rName => {
@@ -249,7 +244,6 @@
                 state.bookedRooms = busyRooms;
                 renderRooms();
             } catch (err) {
-                console.error("Check Avail Error:", err);
                 renderRooms();
             } finally {
                 hideLoading();
@@ -260,9 +254,8 @@
             const container = document.getElementById('roomList');
             container.innerHTML = roomData.map(room => {
                 const isBooked = state.bookedRooms.includes(room.id);
-                const isSelected = state.selectedRooms.find(r => r.id === room.id);
                 return `
-                <div id="card-${room.id}" class="bg-white p-4 rounded-xl border-2 transition-all shadow-sm mb-3 ${isBooked ? 'card-disabled' : 'cursor-pointer'} ${isSelected ? 'card-selected' : ''}" 
+                <div id="card-${room.id}" class="bg-white p-4 rounded-xl border-2 transition-all shadow-sm mb-3 ${isBooked ? 'card-disabled' : 'cursor-pointer'}" 
                      onclick="${isBooked ? '' : `toggleRoom('${room.id}')`}">
                     <div class="flex justify-between items-start">
                         <div>
@@ -270,13 +263,13 @@
                             <p class="text-xs text-gray-400">รองรับ ${room.min}-${room.max} ท่าน</p>
                             ${isBooked ? '<span class="text-[10px] text-red-500 font-bold italic">● เต็มแล้วในวันที่เลือก</span>' : ''}
                         </div>
-                        ${isBooked ? '' : `<input type="checkbox" id="check-${room.id}" class="w-5 h-5 accent-emerald-600" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleRoom('${room.id}')">`}
+                        ${isBooked ? '' : `<input type="checkbox" id="check-${room.id}" class="w-5 h-5 accent-emerald-600" ${state.selectedRooms.find(r => r.id === room.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleRoom('${room.id}')">`}
                     </div>
-                    <div id="options-${room.id}" class="mt-3 ${isSelected ? '' : 'hidden'}" onclick="event.stopPropagation()">
+                    <div id="options-${room.id}" class="mt-3 ${state.selectedRooms.find(r => r.id === room.id) ? '' : 'hidden'}" onclick="event.stopPropagation()">
                         <label class="text-xs font-bold text-emerald-700">ระบุจำนวนคน</label>
                         <select onchange="updateRoomQty('${room.id}', this.value)" class="w-full border rounded mt-1 p-2 bg-emerald-50">
                             <option value="">เลือกจำนวนคน</option>
-                            ${Array.from({length: room.max - room.min + 1}, (_, i) => room.min + i).map(n => `<option value="${n}" ${isSelected && isSelected.guests == n ? 'selected' : ''}>${n} คน</option>`).join('')}
+                            ${Array.from({length: room.max - room.min + 1}, (_, i) => room.min + i).map(n => `<option value="${n}">${n} คน</option>`).join('')}
                         </select>
                     </div>
                 </div>
@@ -314,19 +307,16 @@
         function updateRoomQty(id, qty) {
             const room = roomData.find(r => r.id === id);
             const selected = state.selectedRooms.find(r => r.id === id);
-            if (!selected || !qty) return;
+            if (!selected) return;
             selected.guests = parseInt(qty);
             
             if (id === 'tent') {
                 selected.price = selected.guests * 150;
             } else {
                 for (const [key, price] of Object.entries(room.rates)) {
-                    if (key.includes('-')) {
-                        const [min, max] = key.split('-').map(Number);
-                        if (selected.guests >= min && selected.guests <= max) selected.price = price;
-                    } else if (parseInt(key) == selected.guests) {
-                        selected.price = price;
-                    }
+                    const [min, max] = key.split('-').map(Number);
+                    if (max && selected.guests >= min && selected.guests <= max) selected.price = price;
+                    else if (!max && selected.guests == min) selected.price = price;
                 }
             }
             calculateTotal();
@@ -374,16 +364,9 @@
         }
 
         function applyPromo() {
-            const codeInput = document.getElementById('promoInput').value.trim().toUpperCase();
+            const codeInput = document.getElementById('promoInput').value.toUpperCase();
             const statusEl = document.getElementById('promoStatus');
             
-            if (!codeInput) {
-                state.activePromo = null;
-                statusEl.classList.add('hidden');
-                calculateTotal();
-                return;
-            }
-
             const promo = state.promoCodes.find(p => p.code === codeInput);
             if (promo) {
                 state.activePromo = promo;
@@ -396,7 +379,7 @@
             }
             statusEl.classList.remove('hidden');
             calculateTotal();
-            if (state.currentStep === 3) updateSummary();
+            updateSummary();
         }
 
         function calculateTotal() {
@@ -404,8 +387,7 @@
             let foodTotal = state.selectedFoods.reduce((sum, f) => sum + (f.price * f.qty), 0);
             
             if (state.checkin && state.checkout) {
-                const diffTime = Math.abs(new Date(state.checkout) - new Date(state.checkin));
-                const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const nights = Math.max(1, (new Date(state.checkout) - new Date(state.checkin)) / (1000 * 60 * 60 * 24));
                 roomTotal *= nights;
             }
 
@@ -423,9 +405,8 @@
 
             state.total = (roomTotal - state.discountAmount) + foodTotal;
 
-            // ตรวจสอบวันพิเศษ (มัดจำ 100%)
             let depositRate = 0.5;
-            if (state.checkin && state.specialDates.some(sd => sd.date === state.checkin)) {
+            if (state.checkin && state.specialDates.includes(state.checkin)) {
                 depositRate = 1.0;
             }
 
@@ -437,18 +418,14 @@
         }
 
         function updateQRCode(amount) {
-            document.getElementById('qrCode').src = amount > 0 
-                ? `https://promptpay.io/${PROMPTPAY_ID}/${amount}.png` 
-                : `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${PROMPTPAY_ID}`;
+            document.getElementById('qrCode').src = amount > 0 ? `https://promptpay.io/${PROMPTPAY_ID}/${amount}.png` : `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${PROMPTPAY_ID}`;
         }
 
         function changeStep(delta) {
-            if (delta > 0) {
-                if (state.currentStep === 1) {
-                    if (!state.checkin || !state.checkout) return alert("เลือกวันเข้าพักก่อน");
-                    if (state.selectedRooms.length === 0) return alert("เลือกห้องพักอย่างน้อย 1 ห้อง");
-                    if (state.selectedRooms.some(r => r.guests === 0)) return alert("กรุณาระบุจำนวนผู้เข้าพักในทุกห้องที่เลือก");
-                }
+            if (delta > 0 && state.currentStep === 1) {
+                if (!state.checkin || !state.checkout) return alert("เลือกวันเข้าพักก่อน");
+                if (state.selectedRooms.length === 0) return alert("เลือกห้องพักอย่างน้อย 1 ห้อง");
+                if (state.selectedRooms.some(r => r.guests === 0)) return alert("ระบุจำนวนผู้เข้าพัก");
             }
 
             document.getElementById(`step${state.currentStep}`).classList.add('hidden');
@@ -463,17 +440,21 @@
             window.scrollTo(0, 0);
         }
 
+        // ฟังก์ชันช่วยจัดรูปแบบวันที่เป็นภาษาไทย
         function formatDateThai(dateStr) {
             if (!dateStr) return "-";
             const d = new Date(dateStr);
             if (isNaN(d.getTime())) return dateStr;
             const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-            return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+            const day = d.getDate();
+            const month = months[d.getMonth()];
+            const year = d.getFullYear() + 543;
+            return `${day} ${month} ${year}`;
         }
 
         function updateSummary() {
             const summary = document.getElementById('summaryContent');
-            const isSpecial = state.checkin && state.specialDates.some(sd => sd.date === state.checkin);
+            const isSpecial = state.checkin && state.specialDates.includes(state.checkin);
 
             summary.innerHTML = `
                 <div class="flex justify-between"><span>เช็คอิน:</span> <b>${formatDateThai(state.checkin)}</b></div>
@@ -484,39 +465,35 @@
                 
                 ${state.discountAmount > 0 ? `<div class="flex justify-between text-xs text-red-600 font-bold"><span>ส่วนลดโค้ด (${state.activePromo.code}):</span> <span>-฿${state.discountAmount.toLocaleString()}</span></div>` : ''}
 
-                ${state.selectedFoods.length > 0 ? `<div class="mt-1 font-bold">อาหาร:</div>` + state.selectedFoods.map(f => `<div class="flex justify-between text-xs"><span>- ${f.name} x ${f.qty}</span> <span>฿${(f.price * f.qty).toLocaleString()}</span></div>`).join('') : ''}
+                ${state.selectedFoods.length > 0 ? `<div class="mt-1 font-bold">อาหาร (ไม่ร่วมส่วนลด):</div>` + state.selectedFoods.map(f => `<div class="flex justify-between text-xs"><span>- ${f.name} x ${f.qty}</span> <span>฿${(f.price * f.qty).toLocaleString()}</span></div>`).join('') : ''}
                 
                 <div class="border-t mt-2 pt-1 flex justify-between font-bold text-emerald-900"><span>รวมทั้งสิ้น:</span> <span>฿${state.total.toLocaleString()}</span></div>
                 
                 <div class="mt-2 p-2 bg-red-50 rounded text-[10px] text-red-700 font-bold">
                     * เงื่อนไขมัดจำ: ${isSpecial ? 'วันพิเศษ มัดจำ 100%' : 'มัดจำห้องพัก 50% + ค่าอาหาร 100%'}
-                    <br>ยอดโอนขั้นต่ำ: ฿${state.deposit.toLocaleString()}
+                    <br>ยอดโอน: ฿${state.deposit.toLocaleString()}
                 </div>
             `;
         }
 
         async function submitBooking() {
+            const slipFile = document.getElementById('slip').files[0];
             const name = document.getElementById('custName').value;
             const tel = document.getElementById('custTel').value;
-            const slipInput = document.getElementById('slipInput');
 
-            if(!name || !tel) return alert("กรุณากรอกชื่อและเบอร์โทร");
-            if(slipInput.files.length === 0) return alert("กรุณาแนบหลักฐานการโอนเงิน");
+            if (!name || !tel || !slipFile) return alert("กรุณากรอกข้อมูลและแนบสลิป");
 
-            showLoading("กำลังบันทึกข้อมูลและอัปโหลดรูปภาพ...");
-
-            const file = slipInput.files[0];
+            showLoading("กำลังส่งข้อมูลการจอง...");
             const reader = new FileReader();
-            
-            // ใช้ Promise เพื่อรอให้โหลดรูปเสร็จ
+            reader.readAsDataURL(slipFile);
             reader.onload = async () => {
                 try {
-                    const response = await fetch(API_URL, {
+                    const response = await fetch(BACKEND_URL, {
                         method: 'POST',
                         body: JSON.stringify({
                             action: 'submitBooking',
-                            userId: state.userId,
-                            lineName: state.lineName,
+                            userId: state.user.id,
+                            userName: state.user.name,
                             custName: name,
                             custTel: tel,
                             checkin: state.checkin,
@@ -530,30 +507,16 @@
                             slip: reader.result
                         })
                     });
-
-                    if (!response.ok) throw new Error("Server responded with error " + response.status);
-                    
                     const res = await response.json();
                     if(res.status === 'success') {
                         alert("จองสำเร็จ! รอแอดมินตรวจสอบ");
-                        if(window.liff) liff.closeWindow();
+                        liff.closeWindow();
                     } else {
-                        alert("เกิดข้อผิดพลาดจากระบบ: " + res.message);
+                        alert("เกิดข้อผิดพลาด: " + res.message);
                     }
-                } catch (err) { 
-                    console.error(err);
-                    alert("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง หรือติดต่อแอดมินโดยตรง"); 
-                } finally { 
-                    hideLoading(); 
-                }
+                } catch (err) { alert("เกิดข้อผิดพลาดในการเชื่อมต่อ"); }
+                finally { hideLoading(); }
             };
-            
-            reader.onerror = () => {
-                alert("ไม่สามารถอ่านไฟล์รูปภาพได้");
-                hideLoading();
-            };
-            
-            reader.readAsDataURL(file);
         }
 
         function showLoading(text) {
