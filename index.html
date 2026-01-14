@@ -173,15 +173,15 @@
 
         async function init() {
             try {
-                // Initialize LIFF (Uncomment when using real LIFF)
-                // await liff.init({ liffId: LIFF_ID });
-                // if (liff.isLoggedIn()) {
-                //     const p = await liff.getProfile();
-                //     state.user = { id: p.userId, name: p.displayName };
-                //     document.getElementById('userImg').src = p.pictureUrl;
-                //     document.getElementById('userName').innerText = p.displayName;
-                //     document.getElementById('custName').value = p.displayName;
-                // } else { liff.login(); }
+                Initialize LIFF (Uncomment when using real LIFF)
+                await liff.init({ liffId: LIFF_ID });
+                if (liff.isLoggedIn()) {
+                    const p = await liff.getProfile();
+                    state.user = { id: p.userId, name: p.displayName };
+                    document.getElementById('userImg').src = p.pictureUrl;
+                    document.getElementById('userName').innerText = p.displayName;
+                    document.getElementById('custName').value = p.displayName;
+                } else { liff.login(); }
                 
                 fetchData();
                 renderFoods();
