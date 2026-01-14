@@ -130,7 +130,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyw4R8eB17X1f4E1jG-O65p46G0fXzX9X9X9X9X9X9X9X9X9/exec'; // ** แก้เป็น URL Web App ของคุณ **
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec'; // ** แก้เป็น URL Web App ของคุณ **
         let state = {
             profile: null,
             rooms: [],
@@ -143,7 +143,7 @@
         async function init() {
             showLoading("กำลังเชื่อมต่อ LINE...");
             try {
-                await liff.init({ liffId: "2006764516-xQ8W7nJk" }); // ** แก้เป็น LIFF ID ของคุณ **
+                await liff.init({ liffId: "2008863563-tuai5kaC" }); // ** แก้เป็น LIFF ID ของคุณ **
                 if (!liff.isLoggedIn()) { liff.login(); return; }
                 state.profile = await liff.getProfile();
                 fetchData();
@@ -293,6 +293,68 @@
             };
         }
 
+        async function confirmBooking() {
+    const name = document.getElementById('custName').value.trim();
+    const tel = document.getElementById('custTel').value.trim();
+    const slipFile = document.getElementById('slipInput').files[0];
+
+    if (!name || !tel || !slipFile) {
+        alert("กรุณากรอกข้อมูลและแนบสลิปให้ครบถ้วน");
+        return;
+    }
+
+    showLoading("กำลังบันทึกข้อมูลการจอง...");
+
+    const reader = new FileReader();
+    reader.onload = async function() {
+        try {
+            // ดึงข้อมูล Base64 เฉพาะส่วนของ Data (ตัด Prefix ออก)
+            const base64Slip = reader.result.split(',')[1];
+            
+            const payload = {
+                action: 'saveBooking',
+                userId: state.userLineId,
+                displayName: state.userDisplayName,
+                custName: name,
+                custTel: tel,
+                checkin: state.checkin,
+                checkout: state.checkout,
+                // แปลง Array เป็น String เพื่อส่งไปเก็บใน Sheet
+                rooms: JSON.stringify(state.selectedRooms),
+                foods: JSON.stringify(state.selectedFoods),
+                promoCode: state.activePromo ? state.activePromo.code : '',
+                discount: state.discountAmount || 0,
+                total: state.total,
+                deposit: state.deposit,
+                slip: base64Slip // ส่งแค่เนื้อข้อมูล base64
+            };
+
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            const res = await response.json();
+            
+            if (res.status === 'success') {
+                alert("จองสำเร็จ! กรุณารอแอดมินตรวจสอบยอดเงิน");
+                liff.closeWindow();
+            } else {
+                throw new Error(res.message);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("เกิดข้อผิดพลาด: " + err.message);
+        } finally {
+            hideLoading();
+        }
+    };
+    reader.onerror = () => {
+        alert("ไม่สามารถอ่านไฟล์รูปภาพได้");
+        hideLoading();
+    };
+    reader.readAsDataURL(slipFile);
+}
         function updateStepper(step) {
             for(let i=1; i<=3; i++) {
                 const el = document.getElementById(`step-${i}`);
