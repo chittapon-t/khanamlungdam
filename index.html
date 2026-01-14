@@ -11,7 +11,6 @@
         body { font-family: 'Kanit', sans-serif; background-color: #f3f4f6; }
         .card-selected { border: 2px solid #059669; background-color: #ecfdf5; }
         .card-disabled { opacity: 0.6; background-color: #f9fafb; cursor: not-allowed; filter: grayscale(1); }
-        /* Animation */
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -53,6 +52,7 @@
                         <input type="date" id="checkout" class="w-full bg-gray-50 border-0 rounded-xl p-3 text-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none" onchange="handleDateChange()">
                     </div>
                 </div>
+                <p class="text-[10px] text-red-500 mt-2">* กรุณาจองล่วงหน้าอย่างน้อย 1 วัน</p>
             </div>
 
             <div id="roomSection" class="hidden mt-6">
@@ -150,6 +150,7 @@
             checkin: '', checkout: '',
             rooms: [], foods: [],
             bookedRooms: [], specialDates: [], promoCodes: [],
+            occupied: new Set(),
             activePromo: null, discount: 0,
             roomTotal: 0, foodTotal: 0, total: 0, deposit: 0
         };
@@ -178,26 +179,67 @@
                 
                 if (!liff.isLoggedIn()) {
                     liff.login();
-                    return; // Stop execution while redirecting
+                    return; 
                 }
                 
                 const p = await liff.getProfile();
                 state.user = { id: p.userId, name: p.displayName, picture: p.pictureUrl };
                 
-                // Update Profile UI
                 if (p.pictureUrl) document.getElementById('userImg').src = p.pictureUrl;
                 document.getElementById('userName').innerText = p.displayName;
                 document.getElementById('custName').value = p.displayName;
                 
+                setupDateConstraints();
                 fetchData();
                 renderFoods();
             } catch (e) { 
-                console.error("LIFF Init Failed or Local Environment:", e);
-                // Fallback for testing (remove this block in production if you want strict Line login only)
-                // state.user = { id: 'TEST_USER', name: 'Test User' };
+                console.error("LIFF/Local:", e);
+                setupDateConstraints();
                 fetchData();
                 renderFoods();
             }
+        }
+
+        // --- แก้ไข 1: ปรับ Logic วันที่ให้ถูกต้องตามเวลาท้องถิ่น (พรุ่งนี้เท่านั้น) ---
+        function setupDateConstraints() {
+            const today = new Date();
+            // สร้างวันที่พรุ่งนี้
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            
+            // Format YYYY-MM-DD แบบ Local Time (ป้องกันปัญหา Timezone)
+            const yyyy = tomorrow.getFullYear();
+            const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            const dd = String(tomorrow.getDate()).padStart(2, '0');
+            const minDate = `${yyyy}-${mm}-${dd}`;
+            
+            const checkinEl = document.getElementById('checkin');
+            checkinEl.min = minDate;
+            
+            // ถ้าค่าเดิมเป็นวันเก่าให้ล้างทิ้ง
+            if(checkinEl.value && checkinEl.value < minDate) {
+                checkinEl.value = '';
+                document.getElementById('checkout').value = '';
+            }
+            
+            // Logic วันออกต้องหลังจากวันเข้า
+            checkinEl.addEventListener('change', function() {
+                if(this.value) {
+                    const cin = new Date(this.value);
+                    const nextDay = new Date(cin);
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    
+                    const nextY = nextDay.getFullYear();
+                    const nextM = String(nextDay.getMonth() + 1).padStart(2, '0');
+                    const nextD = String(nextDay.getDate()).padStart(2, '0');
+                    
+                    document.getElementById('checkout').min = `${nextY}-${nextM}-${nextD}`;
+                    
+                    if(document.getElementById('checkout').value <= this.value) {
+                        document.getElementById('checkout').value = '';
+                    }
+                }
+            });
         }
 
         async function fetchData() {
@@ -206,8 +248,6 @@
                 const data = await res.json();
                 state.promoCodes = data.promoCodes || [];
                 state.specialDates = data.specialDates || [];
-                
-                // Process bookings for availability check later
                 state.allBookings = data.bookings || [];
             } catch (e) { console.log("Offline mode or Error"); }
         }
@@ -217,41 +257,62 @@
         function handleDateChange() {
             const cin = document.getElementById('checkin').value;
             const cout = document.getElementById('checkout').value;
+            
             if(!cin || !cout) return;
 
-            // Simple Availability Check
-            const occupied = new Set();
-            const sIn = new Date(cin);
-            const sOut = new Date(cout);
+            state.checkin = cin; 
+            state.checkout = cout;
+            state.rooms = []; // เคลียร์ห้องที่เลือกเมื่อเปลี่ยนวันที่
             
-            (state.allBookings || []).forEach(b => {
-                if(b.Status === 'ยกเลิก') return;
-                const bIn = new Date(b.CheckIn);
-                const bOut = new Date(b.CheckOut);
-                if (sIn < bOut && sOut > bIn) {
-                    // Overlap
-                    if(b.RoomsInfo) b.RoomsInfo.split(', ').forEach(rName => {
-                        const r = roomData.find(rd => rd.name === rName);
-                        if(r) occupied.add(r.id);
-                    });
-                }
-            });
-
-            state.checkin = cin; state.checkout = cout;
-            state.rooms = []; // Reset rooms
-            renderRooms(occupied);
+            checkAvailability(); 
+            renderRooms();
             document.getElementById('roomSection').classList.remove('hidden');
             calculate();
         }
 
-        function renderRooms(occupied) {
+        // --- แก้ไข 2: เพิ่มความรัดกุมในการเช็คห้องว่าง ---
+        function checkAvailability() {
+            state.occupied = new Set();
+            if (!state.checkin || !state.checkout) return;
+
+            const sIn = new Date(state.checkin);
+            const sOut = new Date(state.checkout);
+            // set time to 00:00 to avoid bug
+            sIn.setHours(0,0,0,0);
+            sOut.setHours(0,0,0,0);
+            
+            (state.allBookings || []).forEach(b => {
+                if(b.Status === 'ยกเลิก') return;
+                
+                const bIn = new Date(b.CheckIn);
+                const bOut = new Date(b.CheckOut);
+                bIn.setHours(0,0,0,0);
+                bOut.setHours(0,0,0,0);
+
+                if (sIn < bOut && sOut > bIn) {
+                    if(b.RoomsInfo) {
+                        b.RoomsInfo.split(',').forEach(rName => {
+                            const cleanName = rName.trim();
+                            const r = roomData.find(rd => rd.name === cleanName);
+                            if(r) state.occupied.add(r.id);
+                        });
+                    }
+                }
+            });
+        }
+
+        // --- แก้ไข 3: ปรับปรุง toggleRoom และ renderRooms ---
+        function renderRooms() {
             const html = roomData.map(r => {
-                const isFull = occupied.has(r.id);
+                const isFull = state.occupied.has(r.id);
                 const isSel = state.rooms.find(x => x.id === r.id);
+                
+                // ใช้ onclick แบบชัดเจน และเพิ่ม preventDefault กันเหนียว
                 return `
                 <div onclick="${isFull ? '' : `toggleRoom('${r.id}')`}" 
-                     class="p-4 rounded-xl border-2 transition-all cursor-pointer ${isFull ? 'card-disabled border-gray-100' : (isSel ? 'card-selected' : 'bg-white border-transparent shadow-sm hover:border-emerald-200')}">
-                    <div class="flex justify-between items-start">
+                     class="p-4 rounded-xl border-2 transition-all cursor-pointer relative ${isFull ? 'card-disabled border-gray-100' : (isSel ? 'card-selected' : 'bg-white border-transparent shadow-sm hover:border-emerald-200')}">
+                    
+                    <div class="flex justify-between items-start pointer-events-none">
                         <div>
                             <div class="font-bold text-gray-800">${r.name}</div>
                             <div class="text-xs text-gray-400">รองรับ ${r.min}-${r.max} ท่าน</div>
@@ -259,6 +320,7 @@
                         </div>
                         ${!isFull && isSel ? '<div class="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs">✓</div>' : ''}
                     </div>
+
                     ${isSel ? `
                     <div class="mt-3 pt-3 border-t border-emerald-100" onclick="event.stopPropagation()">
                         <select onchange="updateGuest('${r.id}', this.value)" class="w-full text-xs p-2 rounded bg-white border border-emerald-200 text-emerald-800 font-bold">
@@ -272,17 +334,36 @@
         }
 
         function toggleRoom(id) {
+            // เช็ควันก่อน
+            if(!state.checkin || !state.checkout) return alert("กรุณาเลือกวันเข้าพักให้ครบก่อนครับ");
+
             const idx = state.rooms.findIndex(r => r.id === id);
-            if(idx > -1) state.rooms.splice(idx, 1);
-            else state.rooms.push({ id, name: roomData.find(r=>r.id===id).name, guests: 0, price: 0 });
-            handleDateChange(); // Re-render to show selection
+            if(idx > -1) {
+                // ถ้ามีอยู่แล้วให้เอาออก (ยกเลิกเลือก)
+                state.rooms.splice(idx, 1);
+            } else {
+                // ถ้ายังไม่มีให้เพิ่มเข้าไป
+                const room = roomData.find(r => r.id === id);
+                if(room) {
+                    state.rooms.push({ 
+                        id: room.id, 
+                        name: room.name, 
+                        guests: room.min, // Default เป็นค่าต่ำสุดเลยจะได้คำนวณราคาได้ทันที
+                        price: 0 
+                    });
+                    // คำนวณราคาเริ่มต้นทันที
+                    updateGuest(room.id, room.min);
+                }
+            }
+            // รีเรนเดอร์เฉพาะส่วนห้องพัก ไม่ต้องไปยุ่งกับ Date
+            renderRooms();
+            calculate();
         }
 
         function updateGuest(id, val) {
             const r = state.rooms.find(x => x.id === id);
             if(r) {
                 r.guests = parseInt(val);
-                // Calculate Price Logic
                 const rd = roomData.find(x => x.id === id);
                 if(id === 'tent') r.price = r.guests * 150;
                 else {
@@ -335,29 +416,21 @@
         }
 
         function calculate() {
-            // Room
             const nights = (new Date(state.checkout) - new Date(state.checkin))/(86400000) || 1;
             state.roomTotal = state.rooms.reduce((s, r) => s + (r.price * nights), 0);
-            
-            // Food
             state.foodTotal = state.foods.reduce((s, f) => s + (f.price * f.qty), 0);
             
-            // Discount
             state.discount = 0;
             if(state.activePromo) {
                 if(state.activePromo.type === 'THB') state.discount = state.activePromo.value;
                 else state.discount = state.roomTotal * (state.activePromo.value / 100);
             }
-            if(state.discount > state.roomTotal) state.discount = state.roomTotal; // Max discount = room price
+            if(state.discount > state.roomTotal) state.discount = state.roomTotal; 
 
-            // Total & Deposit
             state.total = (state.roomTotal - state.discount) + state.foodTotal;
             
-            // Special Date Check
             const isFullPay = state.specialDates.find(d => d.date === state.checkin && d.type === 'FullPayment');
             const depositPct = isFullPay ? 1.0 : 0.5;
-            
-            // Deposit rule: 50% Room (after discount) + 100% Food
             state.deposit = ((state.roomTotal - state.discount) * depositPct) + state.foodTotal;
             
             updateUI();
@@ -367,13 +440,11 @@
             document.getElementById('totalPrice').innerText = `฿${state.total.toLocaleString()}`;
             document.getElementById('depositText').innerText = `฿${Math.ceil(state.deposit).toLocaleString()}`;
             
-            // QR PromptPay
             const amt = Math.ceil(state.deposit);
             document.getElementById('qrCode').src = amt > 0 
                 ? `https://promptpay.io/0615924262/${amt}.png` 
                 : `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=0615924262`;
 
-            // Summary Text
             const sumHTML = `
                 <div class="flex justify-between"><span>ห้องพัก (${state.rooms.length} ห้อง):</span> <span>฿${state.roomTotal.toLocaleString()}</span></div>
                 ${state.discount > 0 ? `<div class="flex justify-between text-emerald-600"><span>ส่วนลด:</span> <span>-฿${state.discount.toLocaleString()}</span></div>` : ''}
@@ -396,7 +467,6 @@
         }
 
         function changeStep(dir) {
-            // Validation
             if (dir === 1) {
                 if (state.step === 1 && (!state.checkin || state.rooms.length === 0 || state.rooms.some(r=>r.guests===0))) 
                     return alert("กรุณาเลือกวันและห้องพักให้ครบถ้วน");
@@ -406,7 +476,6 @@
             state.step += dir;
             document.getElementById(`step${state.step}`).classList.remove('hidden');
             
-            // Buttons
             document.getElementById('btnPrev').classList.toggle('hidden', state.step === 1);
             document.getElementById('btnNext').classList.toggle('hidden', state.step === 3);
             document.getElementById('btnConfirm').classList.toggle('hidden', state.step !== 3);
@@ -433,9 +502,9 @@
                     checkin: state.checkin,
                     checkout: state.checkout,
                     rooms: JSON.stringify(state.rooms),
-                    foods: JSON.stringify(state.foods), // Send foods
-                    promoCode: state.activePromo ? state.activePromo.code : '', // Send promo
-                    discount: state.discount, // Send discount amt
+                    foods: JSON.stringify(state.foods),
+                    promoCode: state.activePromo ? state.activePromo.code : '',
+                    discount: state.discount,
                     total: state.total,
                     deposit: state.deposit,
                     slip: reader.result
