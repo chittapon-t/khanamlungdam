@@ -146,7 +146,7 @@
 
         let state = {
             step: 1,
-            user: { id: 'U1234', name: 'Test User' }, // Mock user for testing without LIFF
+            user: { id: '', name: 'Guest' }, 
             checkin: '', checkout: '',
             rooms: [], foods: [],
             bookedRooms: [], specialDates: [], promoCodes: [],
@@ -173,19 +173,31 @@
 
         async function init() {
             try {
-                Initialize LIFF (Uncomment when using real LIFF)
+                // Initialize LIFF and enforce login
                 await liff.init({ liffId: LIFF_ID });
-                if (liff.isLoggedIn()) {
-                    const p = await liff.getProfile();
-                    state.user = { id: p.userId, name: p.displayName };
-                    document.getElementById('userImg').src = p.pictureUrl;
-                    document.getElementById('userName').innerText = p.displayName;
-                    document.getElementById('custName').value = p.displayName;
-                } else { liff.login(); }
+                
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return; // Stop execution while redirecting
+                }
+                
+                const p = await liff.getProfile();
+                state.user = { id: p.userId, name: p.displayName, picture: p.pictureUrl };
+                
+                // Update Profile UI
+                if (p.pictureUrl) document.getElementById('userImg').src = p.pictureUrl;
+                document.getElementById('userName').innerText = p.displayName;
+                document.getElementById('custName').value = p.displayName;
                 
                 fetchData();
                 renderFoods();
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error("LIFF Init Failed or Local Environment:", e);
+                // Fallback for testing (remove this block in production if you want strict Line login only)
+                // state.user = { id: 'TEST_USER', name: 'Test User' };
+                fetchData();
+                renderFoods();
+            }
         }
 
         async function fetchData() {
