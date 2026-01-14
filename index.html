@@ -496,25 +496,27 @@
         }
 
         async function submitBooking() {
-            const slipFile = document.getElementById('slip').files[0];
-            const name = document.getElementById('custName').value.trim();
-            const tel = document.getElementById('custTel').value.trim();
+            const name = document.getElementById('custName').value;
+            const tel = document.getElementById('custTel').value;
+            const slipInput = document.getElementById('slipInput');
 
-            if (!name || !tel) return alert("กรุณากรอกชื่อและเบอร์โทร");
-            if (!slipFile) return alert("กรุณาแนบสลิปหลักฐานการโอน");
+            if(!name || !tel) return alert("กรุณากรอกชื่อและเบอร์โทร");
+            if(slipInput.files.length === 0) return alert("กรุณาแนบหลักฐานการโอนเงิน");
 
-            showLoading("กำลังส่งข้อมูลการจอง...");
+            showLoading("กำลังบันทึกข้อมูลและอัปโหลดรูปภาพ...");
+
+            const file = slipInput.files[0];
             const reader = new FileReader();
-            reader.readAsDataURL(slipFile);
+            
+            // ใช้ Promise เพื่อรอให้โหลดรูปเสร็จ
             reader.onload = async () => {
                 try {
-                    const response = await fetch(BACKEND_URL, {
+                    const response = await fetch(API_URL, {
                         method: 'POST',
-                        mode: 'no-cors', // หากเจอปัญหา CORS ให้ลองเปลี่ยน แต่ปกติ App Script แนะนำแบบมาตรฐาน
                         body: JSON.stringify({
                             action: 'submitBooking',
-                            userId: state.user.id,
-                            userName: state.user.name,
+                            userId: state.userId,
+                            lineName: state.lineName,
                             custName: name,
                             custTel: tel,
                             checkin: state.checkin,
@@ -528,20 +530,30 @@
                             slip: reader.result
                         })
                     });
+
+                    if (!response.ok) throw new Error("Server responded with error " + response.status);
                     
-                    // หมายเหตุ: กรณี fetch POST ไป Google Script บางครั้งจะรับ JSON กลับมาไม่ได้เพราะ CORS
-                    // แต่ข้อมูลมักจะเข้าแล้ว ให้หน่วงเวลาและสมมติว่าสำเร็จ หรือตรวจสอบการทำงานใน Sheet
-                    alert("ส่งข้อมูลการจองแล้ว! กรุณารอการยืนยันจากแอดมินทาง LINE");
-                    liff.closeWindow();
-                    
+                    const res = await response.json();
+                    if(res.status === 'success') {
+                        alert("จองสำเร็จ! รอแอดมินตรวจสอบ");
+                        if(window.liff) liff.closeWindow();
+                    } else {
+                        alert("เกิดข้อผิดพลาดจากระบบ: " + res.message);
+                    }
                 } catch (err) { 
-                    console.error("Submit Error:", err);
-                    alert("ส่งข้อมูลสำเร็จ (หากแอปค้างกรุณาปิดหน้าต่างได้เลยครับ)");
-                    liff.closeWindow();
+                    console.error(err);
+                    alert("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง หรือติดต่อแอดมินโดยตรง"); 
                 } finally { 
                     hideLoading(); 
                 }
             };
+            
+            reader.onerror = () => {
+                alert("ไม่สามารถอ่านไฟล์รูปภาพได้");
+                hideLoading();
+            };
+            
+            reader.readAsDataURL(file);
         }
 
         function showLoading(text) {
