@@ -3,195 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>แอดมิน - ขนำลุงดำ</title>
+    <title>แผงควบคุมแอดมิน - ขนำลุงดำ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #f9fafb; padding-bottom: 80px; }
-        .tab-active { color: #059669; border-top: 3px solid #059669; background: white; }
-        .card-confirm { border-left: 5px solid #10b981; }
-        .card-pending { border-left: 5px solid #f59e0b; }
-        .card-cancel { border-left: 5px solid #ef4444; opacity: 0.8; }
+        body { font-family: 'Kanit', sans-serif; padding-bottom: 90px; }
+        .tab-active { color: #059669; border-top: 3px solid #059669; background: #f0fdf4; }
+        .card-confirmed { border-left: 6px solid #10b981; }
+        .card-pending { border-left: 6px solid #f59e0b; }
     </style>
 </head>
-<body>
+<body class="bg-gray-50">
 
-    <div id="loading" class="fixed inset-0 bg-white/80 z-[9999] flex flex-col items-center justify-center hidden">
-        <div class="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-        <p class="mt-4 text-emerald-800">กำลังโหลดข้อมูล...</p>
+    <div id="loading" class="fixed inset-0 bg-white/80 z-[9999] flex items-center justify-center hidden">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
     </div>
 
-    <header class="bg-emerald-800 text-white p-4 sticky top-0 z-50 flex justify-between items-center shadow-lg">
-        <h1 class="text-lg font-bold">แผงควบคุมแอดมิน</h1>
-        <button onclick="fetchData()" class="bg-emerald-700 p-2 rounded-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-        </button>
-    </header>
+    <!-- Top Nav -->
+    <nav class="bg-emerald-900 text-white p-4 sticky top-0 z-40 shadow-md">
+        <div class="flex justify-between items-center">
+            <h1 class="text-xl font-bold">Admin Dashboard</h1>
+            <button onclick="fetchData()" class="p-2 bg-emerald-800 rounded-lg">🔄</button>
+        </div>
+    </nav>
 
-    <main class="max-w-4xl mx-auto p-4">
-        
-        <!-- Dashboard / Pending -->
-        <section id="tab-home">
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-xl shadow-sm border text-center">
-                    <p class="text-gray-500 text-xs">รอตรวจสอบ</p>
-                    <p id="count-pending" class="text-2xl font-bold text-amber-500">0</p>
+    <!-- Main Content -->
+    <main class="p-4" id="main-content">
+        <!-- Dashboard Home -->
+        <div id="tab-home" class="animate-in space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border text-center">
+                    <p class="text-xs text-gray-500">รอตรวจสอบ</p>
+                    <p id="stat-pending" class="text-2xl font-bold text-amber-500">0</p>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border text-center">
-                    <p class="text-gray-500 text-xs">ยืนยันแล้ววันนี้</p>
-                    <p id="count-today" class="text-2xl font-bold text-emerald-600">0</p>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border text-center">
+                    <p class="text-xs text-gray-500">ที่พักวันนี้</p>
+                    <p id="stat-today" class="text-2xl font-bold text-emerald-600">0</p>
                 </div>
             </div>
             
-            <h2 class="font-bold mb-3 flex items-center gap-2">รายการที่ต้องจัดการ</h2>
-            <div id="pending-list" class="space-y-4"></div>
-        </section>
+            <h2 class="font-bold text-gray-700">รายการล่าสุด</h2>
+            <div id="booking-list" class="space-y-3"></div>
+        </div>
 
-        <!-- All Bookings -->
-        <section id="tab-all" class="hidden">
-            <input type="text" id="search" oninput="filterData()" placeholder="ค้นหาชื่อ หรือ ID..." class="w-full p-3 mb-4 rounded-xl border outline-none focus:ring-2 focus:ring-emerald-500">
-            <div id="all-list" class="space-y-4"></div>
-        </section>
+        <!-- Calendar Tab -->
+        <div id="tab-calendar" class="animate-in hidden">
+            <div id="calendar" class="bg-white p-2 rounded-2xl shadow-sm border min-h-[500px]"></div>
+        </div>
 
-        <!-- Settings -->
-        <section id="tab-set" class="hidden">
-            <div class="bg-white p-4 rounded-xl border mb-4">
-                <h3 class="font-bold mb-2">จัดการโปรโมชั่น</h3>
-                <div class="flex gap-2">
-                    <input id="p-code" placeholder="โค้ด" class="border p-2 rounded w-full">
-                    <input id="p-val" type="number" placeholder="ลด" class="border p-2 rounded w-full">
-                    <button onclick="saveSetting('addPromo')" class="bg-emerald-600 text-white px-4 rounded">+</button>
+        <!-- Settings Tab -->
+        <div id="tab-settings" class="animate-in hidden space-y-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border">
+                <h3 class="font-bold mb-3">โค้ดส่วนลด</h3>
+                <div class="space-y-2 mb-4">
+                    <input type="text" id="promoCode" placeholder="CODE" class="w-full border p-2 rounded-lg outline-none">
+                    <div class="flex gap-2">
+                        <input type="number" id="promoValue" placeholder="มูลค่า" class="flex-1 border p-2 rounded-lg outline-none">
+                        <select id="promoType" class="border p-2 rounded-lg outline-none">
+                            <option value="fixed">บาท</option>
+                            <option value="percent">%</option>
+                        </select>
+                    </div>
+                    <button onclick="addPromo()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold">เพิ่มโค้ด</button>
                 </div>
-                <div id="promo-list" class="mt-3 space-y-2"></div>
+                <div id="promo-list" class="text-sm border-t pt-3 space-y-2"></div>
             </div>
-        </section>
 
+            <div class="bg-white p-4 rounded-2xl shadow-sm border">
+                <h3 class="font-bold mb-3">วันหยุด/วันพิเศษ</h3>
+                <div class="flex gap-2 mb-4">
+                    <input type="date" id="newSpecialDate" class="flex-1 border p-2 rounded-lg outline-none">
+                    <button onclick="addSpecialDate()" class="bg-emerald-600 text-white px-4 rounded-lg font-bold">เพิ่ม</button>
+                </div>
+                <div id="special-date-list" class="text-sm border-t pt-3 flex flex-wrap gap-2"></div>
+            </div>
+        </div>
     </main>
 
-    <nav class="fixed bottom-0 inset-x-0 bg-white border-t flex justify-around shadow-2xl z-50">
-        <button onclick="switchTab('home')" id="nav-home" class="flex-1 py-3 text-emerald-600 border-t-2 border-emerald-600">หน้าหลัก</button>
-        <button onclick="switchTab('all')" id="nav-all" class="flex-1 py-3 text-gray-400">ทั้งหมด</button>
-        <button onclick="switchTab('set')" id="nav-set" class="flex-1 py-3 text-gray-400">ตั้งค่า</button>
-    </nav>
+    <!-- Bottom Nav -->
+    <div class="fixed bottom-0 inset-x-0 bg-white border-t flex justify-around p-2 z-40">
+        <button onclick="switchTab('home', 'แดชบอร์ด')" class="flex flex-col items-center p-2 rounded-xl transition-all tab-active">
+            <span class="text-lg">🏠</span><span class="text-[10px]">หน้าแรก</span>
+        </button>
+        <button onclick="switchTab('calendar', 'ปฏิทิน')" class="flex flex-col items-center p-2 rounded-xl transition-all">
+            <span class="text-lg">📅</span><span class="text-[10px]">ปฏิทิน</span>
+        </button>
+        <button onclick="switchTab('settings', 'ตั้งค่า')" class="flex flex-col items-center p-2 rounded-xl transition-all">
+            <span class="text-lg">⚙️</span><span class="text-[10px]">ตั้งค่า</span>
+        </button>
+    </div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbyR0jWpP0mOfq77uV548n7L3P3q7Gf228Rre2n9q3K-g7F4X9A8Hh8y1Y2Z3/exec'; // **เปลี่ยนเป็น URL ของคุณ**
-        let rawData = [];
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyR0jWpP0mOfq77uV548n7L3P3q7Gf228Rre2n9q3K-g7F4X9A8Hh8y1Y2Z3/exec';
+        let state = { bookings: [], specialDates: [], promoCodes: [] };
 
         async function fetchData() {
             document.getElementById('loading').classList.remove('hidden');
             try {
-                const res = await fetch(API);
-                const data = await res.json();
-                rawData = data.bookings;
-                render(data);
-            } catch (e) { alert('โหลดข้อมูลไม่สำเร็จ'); }
+                const res = await fetch(API_URL);
+                state = await res.json();
+                renderDashboard();
+                renderSettings();
+                initCalendar();
+            } catch(e) { console.error(e); }
             document.getElementById('loading').classList.add('hidden');
         }
 
-        function render(data) {
-            const pending = data.bookings.filter(b => b.Status === 'รอตรวจสอบ');
-            const confirmedToday = data.bookings.filter(b => b.Status === 'ยืนยันแล้ว').length;
+        function renderDashboard() {
+            const list = document.getElementById('booking-list');
+            const pending = state.bookings.filter(b => b.Status === 'รอตรวจสอบ');
+            document.getElementById('stat-pending').innerText = pending.length;
             
-            document.getElementById('count-pending').innerText = pending.length;
-            document.getElementById('count-today').innerText = confirmedToday;
+            const today = new Date().toISOString().split('T')[0];
+            const activeToday = state.bookings.filter(b => b.CheckIn <= today && b.CheckOut > today && b.Status === 'ยืนยันแล้ว');
+            document.getElementById('stat-today').innerText = activeToday.length;
 
-            // รายการรอตรวจสอบ
-            document.getElementById('pending-list').innerHTML = pending.length ? 
-                pending.map(b => card(b)).join('') : '<p class="text-center py-10 text-gray-400">ไม่มีรายการค้าง</p>';
-
-            // รายการทั้งหมด
-            document.getElementById('all-list').innerHTML = data.bookings.sort((a,b) => b.Timestamp - a.Timestamp).map(b => card(b)).join('');
-            
-            // โปรโมชั่น
-            document.getElementById('promo-list').innerHTML = data.promos.map(p => `
-                <div class="flex justify-between bg-gray-50 p-2 rounded border text-sm">
-                    <span><b>${p.code}</b> (ลด ${p.value})</span>
-                    <button onclick="deleteSet('promo', '${p.id}')" class="text-red-500">ลบ</button>
+            list.innerHTML = state.bookings.slice().reverse().map(b => `
+                <div class="bg-white p-4 rounded-2xl shadow-sm border ${b.Status === 'รอตรวจสอบ' ? 'card-pending' : 'card-confirmed'}">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-[10px] font-bold text-gray-400">#${b.BookingID}</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${b.Status === 'รอตรวจสอบ' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}">${b.Status}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex-1">
+                            <h4 class="font-bold">${b.CustomerName}</h4>
+                            <p class="text-xs text-gray-500">${b.RoomsInfo}</p>
+                            <p class="text-xs text-gray-400 italic">${new Date(b.CheckIn).toLocaleDateString('th-TH')} - ${new Date(b.CheckOut).toLocaleDateString('th-TH')}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-emerald-700">฿${b.Total.toLocaleString()}</p>
+                            ${b.SlipURL ? `<a href="${b.SlipURL}" target="_blank" class="text-[10px] text-blue-500 underline">ดูสลิป</a>` : ''}
+                        </div>
+                    </div>
+                    ${b.Status === 'รอตรวจสอบ' ? `
+                        <div class="mt-3 flex gap-2">
+                            <button onclick="updateStatus('${b.BookingID}', 'ยืนยันแล้ว')" class="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold">ยืนยันยอด</button>
+                            <button onclick="updateStatus('${b.BookingID}', 'ยกเลิก')" class="flex-1 bg-red-50 text-red-500 py-2 rounded-lg text-xs font-bold">ปฏิเสธ</button>
+                        </div>
+                    ` : ''}
                 </div>
             `).join('');
         }
 
-        function card(b) {
-            const isPending = b.Status === 'รอตรวจสอบ';
-            const sClass = b.Status === 'ยืนยันแล้ว' ? 'card-confirm' : (b.Status === 'ยกเลิก' ? 'card-cancel' : 'card-pending');
-            
-            return `
-                <div class="bg-white p-4 rounded-xl shadow-sm border ${sClass} relative">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <p class="font-bold text-lg">${b.CustomerName}</p>
-                            <p class="text-[10px] text-gray-400">${b.BookingID}</p>
-                        </div>
-                        <span class="text-xs px-2 py-1 rounded bg-gray-100">${b.Status}</span>
-                    </div>
-                    
-                    <div class="text-sm grid grid-cols-2 gap-y-1 mb-3">
-                        <p class="text-gray-500">📅 พัก:</p>
-                        <p>${fmt(b.CheckIn)} - ${fmt(b.CheckOut)}</p>
-                        <p class="text-gray-500">🏠 ห้อง:</p>
-                        <p>${b.RoomsInfo}</p>
-                        <p class="text-gray-500">💰 ยอด:</p>
-                        <p class="font-bold">฿${b.TotalAmount.toLocaleString()}</p>
-                        <p class="text-gray-500">💵 มัดจำ:</p>
-                        <p class="text-emerald-600 font-bold">฿${b.Deposit.toLocaleString()}</p>
-                    </div>
+        async function updateStatus(id, status) {
+            if(!confirm(`ต้องการเปลี่ยนสถานะเป็น ${status} ใช่หรือไม่?`)) return;
+            document.getElementById('loading').classList.remove('hidden');
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id, status }) });
+            fetchData();
+        }
 
-                    <div class="flex gap-2">
-                        <a href="tel:${b.Phone}" class="flex-1 bg-gray-100 text-center py-2 rounded text-sm">📞 โทร</a>
-                        ${b.SlipURL !== 'No Slip' ? `<button onclick="window.open('${b.SlipURL}')" class="flex-1 bg-blue-50 text-blue-600 py-2 rounded text-sm border border-blue-100">ดูสลิป</button>` : ''}
-                        ${isPending ? `<button onclick="update('${b.BookingID}', 'ยืนยันแล้ว')" class="flex-[1.5] bg-emerald-600 text-white py-2 rounded font-bold">ยืนยันจอง</button>` : ''}
-                        ${b.Status !== 'ยกเลิก' ? `<button onclick="update('${b.BookingID}', 'ยกเลิก')" class="p-2 bg-red-50 text-red-500 rounded border">🗑️</button>` : ''}
-                    </div>
+        function switchTab(id, title) {
+            ['home', 'calendar', 'settings'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== id);
+                const btn = document.querySelectorAll('button')[['home', 'calendar', 'settings'].indexOf(t) + 1];
+            });
+            document.querySelectorAll('button[onclick*="switchTab"]').forEach(b => b.classList.remove('tab-active'));
+            event.currentTarget.classList.add('tab-active');
+            if(id === 'calendar') setTimeout(() => window.calendar.render(), 100);
+        }
+
+        function initCalendar() {
+            const el = document.getElementById('calendar');
+            window.calendar = new FullCalendar.Calendar(el, {
+                initialView: 'dayGridMonth',
+                locale: 'th',
+                events: state.bookings.filter(b => b.Status !== 'ยกเลิก').map(b => ({
+                    title: b.CustomerName + ' (' + b.RoomsInfo + ')',
+                    start: b.CheckIn,
+                    end: b.CheckOut,
+                    color: b.Status === 'ยืนยันแล้ว' ? '#059669' : '#f59e0b'
+                }))
+            });
+        }
+
+        function renderSettings() {
+            document.getElementById('promo-list').innerHTML = state.promoCodes.map(p => `
+                <div class="flex justify-between items-center py-1 border-b border-gray-50">
+                    <span>${p.code}: <b>${p.value} ${p.type === 'percent' ? '%' : '฿'}</b></span>
+                    <button onclick="removeSetting('promo', '${p.code}')" class="text-red-400">ลบ</button>
                 </div>
-            `;
+            `).join('');
+            document.getElementById('special-date-list').innerHTML = state.specialDates.map(d => `
+                <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md flex items-center gap-1">
+                    ${d} <button onclick="removeSetting('date', '${d}')" class="text-red-400 font-bold ml-1">×</button>
+                </span>
+            `).join('');
         }
 
-        async function update(id, status) {
-            if(!confirm(`เปลี่ยนสถานะเป็น ${status}?`)) return;
+        async function addPromo() {
+            const code = document.getElementById('promoCode').value;
+            const value = document.getElementById('promoValue').value;
+            const type = document.getElementById('promoType').value;
+            if(!code || !value) return alert('กรอกข้อมูลไม่ครบ');
             document.getElementById('loading').classList.remove('hidden');
-            await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, status: status }) });
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'addPromo', code, value, type }) });
             fetchData();
         }
 
-        async function saveSetting(action) {
-            const code = document.getElementById('p-code').value;
-            const val = document.getElementById('p-val').value;
-            if(!code || !val) return;
+        async function addSpecialDate() {
+            const date = document.getElementById('newSpecialDate').value;
+            if(!date) return alert('เลือกวันที่');
             document.getElementById('loading').classList.remove('hidden');
-            await fetch(API, { method: 'POST', body: JSON.stringify({ action, code, value: val, type: 'amount' }) });
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'addSpecialDate', date }) });
             fetchData();
         }
 
-        async function deleteSet(type, id) {
-            if(!confirm('ลบ?')) return;
+        async function removeSetting(type, id) {
+            if(!confirm('ลบรายการนี้?')) return;
             document.getElementById('loading').classList.remove('hidden');
-            await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'removeSetting', type, id }) });
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'removeSetting', type, id }) });
             fetchData();
-        }
-
-        function switchTab(t) {
-            ['home', 'all', 'set'].forEach(id => {
-                document.getElementById('tab-'+id).classList.add('hidden');
-                document.getElementById('nav-'+id).className = 'flex-1 py-3 text-gray-400';
-            });
-            document.getElementById('tab-'+t).classList.remove('hidden');
-            document.getElementById('nav-'+t).className = 'flex-1 py-3 text-emerald-600 border-t-2 border-emerald-600';
-        }
-
-        function filterData() {
-            const q = document.getElementById('search').value.toLowerCase();
-            const cards = document.querySelectorAll('#all-list > div');
-            cards.forEach(c => {
-                c.style.display = c.innerText.toLowerCase().includes(q) ? 'block' : 'none';
-            });
-        }
-
-        function fmt(d) {
-            if(!d) return '-';
-            return new Date(d).toLocaleDateString('th-TH', {day:'numeric', month:'short'});
         }
 
         window.onload = fetchData;
