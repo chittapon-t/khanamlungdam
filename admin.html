@@ -3,217 +3,325 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - ขนำลุงดำ แคมป์ปิ้ง</title>
+    <title>Admin - Khanam Lung Dam</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
-        .tab-active { border-bottom: 3px solid #065f46; color: #065f46; font-weight: bold; }
-        .fc-event { cursor: pointer; padding: 2px 4px; border-radius: 4px; font-size: 0.75rem; }
-    </style>
+    <style> body { font-family: 'Kanit', sans-serif; } </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 h-screen flex overflow-hidden" x-data="adminApp()">
 
-    <nav class="bg-emerald-900 text-white p-4 shadow-md sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold">แผงควบคุมแอดมิน</h1>
-            <button onclick="refreshData()" class="bg-emerald-700 px-3 py-1 rounded text-sm hover:bg-emerald-600">🔄 รีเฟรช</button>
+    <!-- Sidebar -->
+    <aside class="w-64 bg-emerald-900 text-white flex flex-col shadow-xl">
+        <div class="p-6 text-center border-b border-emerald-800">
+            <h1 class="text-xl font-bold">ขนำลุงดำ Admin</h1>
+            <p class="text-xs text-emerald-300 mt-1">System Management</p>
         </div>
-    </nav>
+        <nav class="flex-1 p-4 space-y-2">
+            <a @click="tab = 'dashboard'" :class="{'bg-emerald-700': tab === 'dashboard'}" class="flex items-center space-x-3 p-3 rounded-lg cursor-pointer hover:bg-emerald-800 transition">
+                <i class="fas fa-home w-5"></i><span>ภาพรวม</span>
+            </a>
+            <a @click="tab = 'bookings'" :class="{'bg-emerald-700': tab === 'bookings'}" class="flex items-center space-x-3 p-3 rounded-lg cursor-pointer hover:bg-emerald-800 transition">
+                <i class="fas fa-list w-5"></i><span>รายการจอง</span>
+                <span x-show="pendingCount > 0" class="bg-red-500 text-white text-xs px-2 rounded-full" x-text="pendingCount"></span>
+            </a>
+            <a @click="tab = 'calendar'" :class="{'bg-emerald-700': tab === 'calendar'}" class="flex items-center space-x-3 p-3 rounded-lg cursor-pointer hover:bg-emerald-800 transition">
+                <i class="fas fa-calendar w-5"></i><span>ปฏิทิน</span>
+            </a>
+            <a @click="tab = 'settings'" :class="{'bg-emerald-700': tab === 'settings'}" class="flex items-center space-x-3 p-3 rounded-lg cursor-pointer hover:bg-emerald-800 transition">
+                <i class="fas fa-cog w-5"></i><span>ตั้งค่าระบบ</span>
+            </a>
+        </nav>
+        <div class="p-4 text-xs text-center text-emerald-500">v2.0.0 System Updated</div>
+    </aside>
 
-    <!-- Tabs Nav -->
-    <div class="bg-white border-b sticky top-[60px] z-40">
-        <div class="max-w-6xl mx-auto flex overflow-x-auto no-scrollbar">
-            <button onclick="switchTab('confirm')" id="tab-confirm" class="flex-1 py-4 text-center text-sm tab-active">ยืนยันสลิป</button>
-            <button onclick="switchTab('all')" id="tab-all" class="flex-1 py-4 text-center text-sm text-gray-500">รายการจองทั้งหมด</button>
-            <button onclick="switchTab('calendar')" id="tab-calendar" class="flex-1 py-4 text-center text-sm text-gray-500">ปฏิทิน</button>
-            <button onclick="switchTab('settings')" id="tab-settings" class="flex-1 py-4 text-center text-sm text-gray-500">ตั้งค่า</button>
+    <!-- Main Content -->
+    <main class="flex-1 overflow-auto p-8 relative">
+        
+        <!-- Loading -->
+        <div x-show="loading" class="absolute inset-0 bg-white bg-opacity-80 z-50 flex items-center justify-center">
+            <div class="animate-spin h-10 w-10 border-4 border-emerald-600 border-t-transparent rounded-full"></div>
         </div>
-    </div>
 
-    <main class="max-w-6xl mx-auto p-4 mb-20">
-        <!-- Dashboard / Confirm Slip -->
-        <div id="section-confirm" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="confirmList">
-                <div class="col-span-full py-10 text-center text-gray-400">กำลังโหลดข้อมูล...</div>
+        <!-- DASHBOARD TAB -->
+        <div x-show="tab === 'dashboard'" class="space-y-6">
+            <h2 class="text-2xl font-bold text-gray-800">แดชบอร์ด</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-yellow-500">
+                    <p class="text-gray-500 text-sm">รอตรวจสอบ</p>
+                    <p class="text-3xl font-bold text-gray-800" x-text="pendingCount"></p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-emerald-500">
+                    <p class="text-gray-500 text-sm">เช็คอินวันนี้</p>
+                    <p class="text-3xl font-bold text-gray-800" x-text="todayCheckinCount"></p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                    <p class="text-gray-500 text-sm">รายได้เดือนนี้ (ประมาณ)</p>
+                    <p class="text-3xl font-bold text-gray-800" x-text="monthlyRevenue"></p>
+                </div>
             </div>
-        </div>
 
-        <!-- All Bookings -->
-        <div id="section-all" class="hidden">
+            <!-- Recent Pending -->
             <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-gray-50 border-b">
+                <div class="p-4 border-b bg-gray-50 font-bold text-gray-700">รายการล่าสุดที่ต้องตรวจสอบ</div>
+                <table class="w-full text-left">
+                    <thead class="text-xs text-gray-500 bg-gray-50 uppercase">
                         <tr>
-                            <th class="p-3">วันที่เข้าพัก</th>
-                            <th class="p-3">ผู้จอง</th>
-                            <th class="p-3">ห้อง</th>
-                            <th class="p-3">ยอดชำระ</th>
-                            <th class="p-3">สถานะ</th>
+                            <th class="p-4">ID</th>
+                            <th class="p-4">ลูกค้า</th>
+                            <th class="p-4">วันที่</th>
+                            <th class="p-4">หลักฐาน</th>
+                            <th class="p-4">จัดการ</th>
                         </tr>
                     </thead>
-                    <tbody id="allBookingTable"></tbody>
+                    <tbody class="divide-y">
+                        <template x-for="b in pendingBookings" :key="b.BookingID">
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-4 font-mono text-xs" x-text="b.BookingID"></td>
+                                <td class="p-4">
+                                    <div class="font-bold" x-text="b.CustomerName"></div>
+                                    <div class="text-xs text-gray-500" x-text="b.Phone"></div>
+                                </td>
+                                <td class="p-4 text-sm">
+                                    <span x-text="formatDate(b.CheckIn)"></span> - 
+                                    <span x-text="formatDate(b.CheckOut)"></span>
+                                </td>
+                                <td class="p-4">
+                                    <button @click="viewSlip(b)" class="text-blue-600 hover:underline text-xs">ดูสลิป</button>
+                                </td>
+                                <td class="p-4">
+                                    <button @click="updateStatus(b.BookingID, 'ยืนยันแล้ว')" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded text-xs font-bold hover:bg-emerald-200">อนุมัติ</button>
+                                </td>
+                            </tr>
+                        </template>
+                        <tr x-show="pendingBookings.length === 0"><td colspan="5" class="p-8 text-center text-gray-400">ไม่มีรายการค้าง</td></tr>
+                    </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Calendar -->
-        <div id="section-calendar" class="hidden bg-white p-4 rounded-xl shadow-sm">
-            <div id="calendar"></div>
+        <!-- BOOKINGS TAB -->
+        <div x-show="tab === 'bookings'" class="space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-gray-800">รายการจองทั้งหมด</h2>
+                <input type="text" x-model="search" placeholder="ค้นหาชื่อ/เบอร์..." class="border rounded-lg px-4 py-2 text-sm">
+            </div>
+            <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+                <table class="w-full text-left whitespace-nowrap">
+                    <thead class="text-xs text-gray-500 bg-gray-50 uppercase">
+                        <tr>
+                            <th class="p-3">Status</th>
+                            <th class="p-3">ID</th>
+                            <th class="p-3">ลูกค้า</th>
+                            <th class="p-3">ห้องพัก</th>
+                            <th class="p-3">อาหาร</th>
+                            <th class="p-3">ยอดรวม</th>
+                            <th class="p-3">Slip</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y text-sm">
+                        <template x-for="b in filteredBookings" :key="b.BookingID">
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-3">
+                                    <span class="px-2 py-1 rounded-full text-[10px] font-bold"
+                                        :class="{
+                                            'bg-yellow-100 text-yellow-700': b.Status === 'รอตรวจสอบ',
+                                            'bg-green-100 text-green-700': b.Status === 'ยืนยันแล้ว',
+                                            'bg-red-100 text-red-700': b.Status === 'ยกเลิก'
+                                        }" x-text="b.Status"></span>
+                                </td>
+                                <td class="p-3 font-mono text-xs" x-text="b.BookingID"></td>
+                                <td class="p-3">
+                                    <div x-text="b.CustomerName"></div>
+                                    <div class="text-xs text-gray-400" x-text="b.Phone"></div>
+                                </td>
+                                <td class="p-3 max-w-xs truncate" x-text="b.RoomsInfo"></td>
+                                <td class="p-3 max-w-xs truncate text-xs text-gray-500" x-text="b.FoodItems"></td>
+                                <td class="p-3 font-bold" x-text="'฿'+Number(b.TotalAmount).toLocaleString()"></td>
+                                <td class="p-3"><button @click="viewSlip(b)" class="text-blue-500 text-xs">View</button></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Settings -->
-        <div id="section-settings" class="hidden space-y-6">
+        <!-- SETTINGS TAB -->
+        <div x-show="tab === 'settings'" class="space-y-8">
+            <h2 class="text-2xl font-bold text-gray-800">ตั้งค่าระบบ</h2>
+
+            <!-- Promo Codes -->
             <div class="bg-white p-6 rounded-xl shadow-sm">
-                <h3 class="font-bold text-lg mb-4 text-emerald-900">โค้ดส่วนลด (Sheet: Codes)</h3>
-                <div class="text-sm text-gray-500 mb-4 italic">* กรุณาจัดการผ่าน Google Sheets เพื่อความแม่นยำของข้อมูล</div>
-                <div id="promoDisplay" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+                <div class="flex justify-between mb-4">
+                    <h3 class="font-bold text-lg">โค้ดส่วนลด (Promo Codes)</h3>
+                    <button @click="addPromo()" class="text-sm bg-emerald-600 text-white px-3 py-1 rounded hover:bg-emerald-700">+ เพิ่ม</button>
+                </div>
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 text-gray-500"><tr><th class="p-2">Code</th><th class="p-2">Type</th><th class="p-2">Value</th><th class="p-2">Status</th><th class="p-2">Action</th></tr></thead>
+                    <tbody>
+                        <template x-for="(p, i) in promoCodes" :key="i">
+                            <tr class="border-b">
+                                <td class="p-2"><input x-model="p.code" class="border rounded px-2 py-1 w-24 uppercase"></td>
+                                <td class="p-2">
+                                    <select x-model="p.type" class="border rounded px-2 py-1">
+                                        <option value="THB">บาท</option><option value="%">%</option>
+                                    </select>
+                                </td>
+                                <td class="p-2"><input x-model="p.value" type="number" class="border rounded px-2 py-1 w-20"></td>
+                                <td class="p-2">
+                                    <select x-model="p.status" class="border rounded px-2 py-1 text-xs" :class="p.status=='Active'?'text-green-600':'text-red-500'">
+                                        <option value="Active">ใช้งาน</option><option value="Inactive">ปิด</option>
+                                    </select>
+                                </td>
+                                <td class="p-2"><button @click="promoCodes.splice(i,1)" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+                <button @click="saveSettings('promo')" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded text-sm hover:bg-black">บันทึกการเปลี่ยนแปลง</button>
             </div>
+
+            <!-- Special Dates -->
             <div class="bg-white p-6 rounded-xl shadow-sm">
-                <h3 class="font-bold text-lg mb-4 text-emerald-900">ราคามัดจำพิเศษ (Sheet: Deposits)</h3>
-                <div id="depositDisplay" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+                <div class="flex justify-between mb-4">
+                    <h3 class="font-bold text-lg">วันพิเศษ / วันหยุด (Special Dates)</h3>
+                    <button @click="addDate()" class="text-sm bg-emerald-600 text-white px-3 py-1 rounded hover:bg-emerald-700">+ เพิ่ม</button>
+                </div>
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 text-gray-500"><tr><th class="p-2">Date</th><th class="p-2">Type</th><th class="p-2">Description</th><th class="p-2">Action</th></tr></thead>
+                    <tbody>
+                        <template x-for="(d, i) in specialDates" :key="i">
+                            <tr class="border-b">
+                                <td class="p-2"><input x-model="d.date" type="date" class="border rounded px-2 py-1"></td>
+                                <td class="p-2">
+                                    <select x-model="d.type" class="border rounded px-2 py-1">
+                                        <option value="Closed">ปิดบริการ</option>
+                                        <option value="FullPayment">เก็บเต็ม (เทศกาล)</option>
+                                    </select>
+                                </td>
+                                <td class="p-2"><input x-model="d.desc" class="border rounded px-2 py-1 w-full"></td>
+                                <td class="p-2"><button @click="specialDates.splice(i,1)" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+                <button @click="saveSettings('dates')" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded text-sm hover:bg-black">บันทึกการเปลี่ยนแปลง</button>
             </div>
         </div>
+
+        <!-- SLIP MODAL -->
+        <div x-show="modalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4" @click.self="modalOpen = false">
+            <div class="bg-white rounded-lg max-w-lg w-full overflow-hidden">
+                <div class="p-4 border-b flex justify-between items-center">
+                    <h3 class="font-bold">หลักฐานการโอน</h3>
+                    <button @click="modalOpen = false" class="text-2xl">&times;</button>
+                </div>
+                <div class="p-4 bg-gray-100 flex justify-center">
+                    <img :src="currentSlip" class="max-h-[60vh] object-contain shadow-lg">
+                </div>
+                <div class="p-4 flex justify-end space-x-2">
+                    <button @click="updateStatus(currentBookingId, 'ยกเลิก'); modalOpen=false" class="px-4 py-2 border border-red-500 text-red-500 rounded hover:bg-red-50">ปฏิเสธ</button>
+                    <button @click="updateStatus(currentBookingId, 'ยืนยันแล้ว'); modalOpen=false" class="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">อนุมัติถูกต้อง</button>
+                </div>
+            </div>
+        </div>
+
     </main>
 
-    <!-- Modal Review Slip -->
-    <div id="slipModal" class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 relative overflow-y-auto max-h-[90vh]">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-2xl">×</button>
-            <h3 class="font-bold text-lg mb-4">ตรวจสอบหลักฐานการโอน</h3>
-            <img id="modalSlipImg" class="w-full rounded-xl mb-4 shadow-inner" src="">
-            <div id="modalDetails" class="space-y-2 text-sm mb-6 border-t pt-4"></div>
-            <div class="flex gap-3">
-                <button onclick="updateBooking('ยกเลิก')" class="flex-1 py-3 bg-gray-100 text-red-600 font-bold rounded-xl">ยกเลิก</button>
-                <button onclick="updateBooking('ยืนยันแล้ว')" class="flex-1 py-3 bg-emerald-800 text-white font-bold rounded-xl">ยืนยันการรับเงิน</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        const APP_URL = 'https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec';
-        let allData = [];
-        let currentBookingId = '';
+        const BACKEND_URL = "https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec"; 
 
-        async function refreshData() {
-            const res = await fetch(APP_URL);
-            const data = await res.json();
-            allData = data.bookings;
-            renderAll();
+        function adminApp() {
+            return {
+                tab: 'dashboard',
+                loading: false,
+                search: '',
+                bookings: [],
+                promoCodes: [],
+                specialDates: [],
+                modalOpen: false,
+                currentSlip: '',
+                currentBookingId: '',
+
+                async init() {
+                    this.loading = true;
+                    try {
+                        const res = await fetch(BACKEND_URL);
+                        const data = await res.json();
+                        this.bookings = data.bookings.reverse(); // Newest first
+                        this.promoCodes = data.promoCodes;
+                        this.specialDates = data.specialDates;
+                    } catch(e) { alert("Connect Error"); }
+                    this.loading = false;
+                },
+
+                get filteredBookings() {
+                    return this.bookings.filter(b => 
+                        b.CustomerName.toLowerCase().includes(this.search.toLowerCase()) || 
+                        String(b.Phone).includes(this.search)
+                    );
+                },
+
+                get pendingBookings() {
+                    return this.bookings.filter(b => b.Status === 'รอตรวจสอบ');
+                },
+
+                get pendingCount() { return this.pendingBookings.length; },
+                
+                get todayCheckinCount() {
+                    const today = new Date().toISOString().split('T')[0];
+                    return this.bookings.filter(b => b.CheckIn.startsWith(today) && b.Status !== 'ยกเลิก').length;
+                },
+
+                get monthlyRevenue() {
+                    // Simple logic: Sum of confirmed booking TotalAmount
+                    return '฿' + this.bookings
+                        .filter(b => b.Status === 'ยืนยันแล้ว')
+                        .reduce((s, b) => s + Number(b.TotalAmount), 0).toLocaleString();
+                },
+
+                formatDate(d) {
+                    if(!d) return '-';
+                    return new Date(d).toLocaleDateString('th-TH');
+                },
+
+                viewSlip(booking) {
+                    this.currentSlip = booking.SlipURL;
+                    this.currentBookingId = booking.BookingID;
+                    this.modalOpen = true;
+                },
+
+                async updateStatus(id, status) {
+                    if(!confirm(`ยืนยันเปลี่ยนสถานะเป็น "${status}"?`)) return;
+                    this.loading = true;
+                    await fetch(BACKEND_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'updateStatus', bookingId: id, status: status })
+                    });
+                    // Update local
+                    const b = this.bookings.find(x => x.BookingID === id);
+                    if(b) b.Status = status;
+                    this.loading = false;
+                },
+
+                // Settings Logic
+                addPromo() { this.promoCodes.push({ code: '', type: 'THB', value: 0, status: 'Active' }); },
+                addDate() { this.specialDates.push({ date: '', type: 'FullPayment', desc: '' }); },
+
+                async saveSettings(type) {
+                    this.loading = true;
+                    const payload = {
+                        action: 'updateSettings',
+                        type: type,
+                        items: type === 'promo' ? this.promoCodes : this.specialDates
+                    };
+                    await fetch(BACKEND_URL, { method: 'POST', body: JSON.stringify(payload) });
+                    alert("บันทึกเรียบร้อย");
+                    this.loading = false;
+                }
+            }
         }
-
-        function switchTab(tab) {
-            ['confirm', 'all', 'calendar', 'settings'].forEach(t => {
-                document.getElementById(`section-${t}`).classList.add('hidden');
-                document.getElementById(`tab-${t}`).className = 'flex-1 py-4 text-center text-sm text-gray-500';
-            });
-            document.getElementById(`section-${tab}`).classList.remove('hidden');
-            document.getElementById(`tab-${tab}`).className = 'flex-1 py-4 text-center text-sm tab-active';
-            if(tab === 'calendar') renderCalendar();
-            if(tab === 'settings') loadSettings();
-        }
-
-        function renderAll() {
-            // 1. Confirm List
-            const confirmList = document.getElementById('confirmList');
-            const pending = allData.filter(b => b[13] === 'รอตรวจสอบ');
-            confirmList.innerHTML = pending.length ? '' : '<div class="col-span-full py-10 text-center text-gray-400">ไม่มีสลิปใหม่ที่ต้องตรวจสอบ</div>';
-            pending.forEach(b => {
-                const card = document.createElement('div');
-                card.className = "bg-white p-4 rounded-xl shadow-sm border border-emerald-100 flex flex-col";
-                card.innerHTML = `
-                    <div class="flex-1">
-                        <p class="text-[10px] text-gray-400">ID: ${b[0]}</p>
-                        <p class="font-bold text-emerald-900">${b[4]}</p>
-                        <p class="text-xs text-gray-600 truncate">${b[6]}</p>
-                        <p class="text-xs font-bold text-red-500 mt-2">ยอดมัดจำ: ฿${b[11].toLocaleString()}</p>
-                    </div>
-                    <button onclick="reviewSlip('${b[0]}')" class="mt-4 w-full py-2 bg-emerald-50 text-emerald-800 rounded-lg font-bold text-sm">ดูสลิป</button>
-                `;
-                confirmList.appendChild(card);
-            });
-
-            // 2. All Table
-            const sorted = [...allData].sort((a,b) => new Date(a[8]) - new Date(b[8]));
-            const tableBody = document.getElementById('allBookingTable');
-            tableBody.innerHTML = sorted.map(b => `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="p-3 text-xs font-medium">${b[8]}</td>
-                    <td class="p-3">
-                        <div class="text-xs font-bold">${b[4]}</div>
-                        <div class="text-[10px] text-gray-400">${b[5]}</div>
-                    </td>
-                    <td class="p-3 text-[10px] max-w-[100px] truncate">${b[6]}</td>
-                    <td class="p-3 text-xs font-bold">฿${b[10].toLocaleString()}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[9px] ${b[13] === 'ยืนยันแล้ว' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${b[13]}</span></td>
-                </tr>
-            `).join('');
-        }
-
-        function reviewSlip(id) {
-            const b = allData.find(x => x[0] === id);
-            currentBookingId = id;
-            document.getElementById('modalSlipImg').src = b[14];
-            document.getElementById('modalDetails').innerHTML = `
-                <p><b>ผู้จอง:</b> ${b[4]} (Line: ${b[3]})</p>
-                <p><b>เบอร์โทร:</b> ${b[5]}</p>
-                <p><b>วันที่พัก:</b> ${b[8]} ถึง ${b[9]}</p>
-                <p><b>ห้อง:</b> ${b[6]}</p>
-                <p><b>มัดจำ:</b> <span class="text-red-600 font-bold">฿${b[11].toLocaleString()}</span> / รวมสุทธิ: ฿${b[10].toLocaleString()}</p>
-            `;
-            document.getElementById('slipModal').classList.remove('hidden');
-        }
-
-        async function updateBooking(newStatus) {
-            if(!confirm(`ยืนยันการเปลี่ยนสถานะเป็น ${newStatus}?`)) return;
-            document.getElementById('slipModal').classList.add('hidden');
-            const res = await fetch(APP_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'updateStatus', bookingId: currentBookingId, status: newStatus })
-            });
-            const result = await res.json();
-            if(result.status === 'success') { alert('บันทึกสำเร็จ'); refreshData(); }
-        }
-
-        function renderCalendar() {
-            const calendarEl = document.getElementById('calendar');
-            const events = allData.filter(b => b[13] !== 'ยกเลิก').map(b => ({
-                title: `${b[4]} - ${b[6]}`,
-                start: b[8],
-                end: b[9],
-                backgroundColor: b[13] === 'ยืนยันแล้ว' ? '#065f46' : '#f59e0b',
-                borderColor: 'transparent'
-            }));
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                locale: 'th',
-                events: events
-            });
-            calendar.render();
-        }
-
-        async function loadSettings() {
-            const res = await fetch(APP_URL + '?action=getSettings');
-            const data = await res.json();
-            
-            document.getElementById('promoDisplay').innerHTML = data.promos.slice(1).map(p => `
-                <div class="p-2 border rounded-lg text-xs bg-gray-50">
-                    <div class="font-bold text-emerald-800">${p[0]}</div>
-                    <div>ลด ${p[1]}${p[2]}</div>
-                </div>
-            `).join('');
-
-            document.getElementById('depositDisplay').innerHTML = data.deposits.slice(1).map(d => `
-                <div class="p-2 border rounded-lg text-xs bg-gray-50">
-                    <div class="font-bold">${d[0]}</div>
-                    <div class="text-emerald-700">${d[1]}%</div>
-                </div>
-            `).join('');
-        }
-
-        function closeModal() { document.getElementById('slipModal').classList.add('hidden'); }
-        window.onload = refreshData;
     </script>
 </body>
 </html>
