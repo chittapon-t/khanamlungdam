@@ -1,180 +1,96 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - ขนำลุงดำ แคมป์ปิ้ง</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Kanit', sans-serif; }
-        .loader { border-top-color: #3498db; animation: spinner 1.5s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
+  <meta charset="UTF-8">
+  <title>ระบบหลังบ้าน ขนำลุงดำ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Kanit'; }</style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
-        <div class="bg-white p-5 rounded-lg flex flex-col items-center">
-            <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4"></div>
-            <p class="text-gray-700">กำลังดำเนินการ...</p>
-        </div>
+<body class="bg-gray-100 flex">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-emerald-900 text-white min-h-screen p-6">
+    <h1 class="text-xl font-bold mb-8">Admin Dashboard</h1>
+    <nav class="space-y-4">
+      <a href="#" class="block p-2 hover:bg-emerald-800 rounded">รายการจองล่าสุด</a>
+      <a href="#" class="block p-2 hover:bg-emerald-800 rounded">จัดการโค้ดส่วนลด</a>
+      <a href="#" class="block p-2 hover:bg-emerald-800 rounded">ตั้งค่าวันพิเศษ</a>
+      <a href="#" class="block p-2 hover:bg-emerald-800 rounded">ปิดให้บริการ</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-10">
+    <header class="flex justify-between items-center mb-8">
+      <h2 class="text-2xl font-bold text-gray-800">จัดการรายการจอง</h2>
+      <button onclick="refreshData()" class="bg-emerald-600 text-white px-4 py-2 rounded shadow">รีเฟรชข้อมูล</button>
+    </header>
+
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <table class="w-full text-left">
+        <thead class="bg-gray-50 border-b">
+          <tr>
+            <th class="p-4">Booking ID</th>
+            <th class="p-4">ผู้จอง</th>
+            <th class="p-4">วันที่เข้าพัก</th>
+            <th class="p-4">ยอดมัดจำ</th>
+            <th class="p-4">สถานะ</th>
+            <th class="p-4">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="booking-table-body">
+          <!-- Rows injected here -->
+          <tr>
+            <td colspan="6" class="p-10 text-center text-gray-400">กำลังโหลดข้อมูล...</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+  </main>
 
-    <div class="max-w-6xl mx-auto p-4 md:p-8">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-2xl font-bold text-green-900">Admin Control Panel</h1>
-            <div class="flex items-center gap-4">
-                <button onclick="fetchBookings()" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600 transition">🔄 รีเฟรชข้อมูล</button>
-                <div class="bg-white px-4 py-2 rounded-lg shadow-sm text-sm">ยินดีต้อนรับ แอดมินขนำลุงดำ</div>
-            </div>
-        </div>
+  <script>
+    const GAS_URL = "YOUR_DEPLOYED_GAS_URL";
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <!-- Sidebar Nav -->
-            <div class="space-y-2">
-                <button onclick="showSection('bookings')" class="w-full text-left bg-green-700 text-white p-3 rounded-lg font-medium transition">รายการจอง</button>
-                <button onclick="showSection('config')" class="w-full text-left bg-white p-3 rounded-lg hover:bg-green-50 transition border">ตั้งค่าระบบ</button>
-            </div>
+    async function refreshData() {
+      const res = await fetch(`${GAS_URL}?action=getInitialData`);
+      const data = await res.json();
+      const tbody = document.getElementById('booking-table-body');
+      
+      tbody.innerHTML = data.bookings.map(b => `
+        <tr class="border-b">
+          <td class="p-4 font-mono text-sm">${b.เลขที่การจอง}</td>
+          <td class="p-4">${b.ชื่อผู้จอง}<br><span class="text-xs text-gray-400">${b.เบอร์โทรศัพท์}</span></td>
+          <td class="p-4">${b.วันที่เข้าพัก}</td>
+          <td class="p-4 text-emerald-600 font-bold">${b.มัดจำ}</td>
+          <td class="p-4">
+            <span class="px-2 py-1 rounded-full text-xs ${b.สถานะ === 'ยืนยันแล้ว' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
+              ${b.สถานะ}
+            </span>
+          </td>
+          <td class="p-4">
+            <button class="text-blue-600 text-sm hover:underline" onclick="viewSlip('${b.ลิงก์สลิป}')">ดูสลิป</button>
+            <button class="ml-2 bg-green-500 text-white px-2 py-1 rounded text-xs" onclick="updateStatus('${b.เลขที่การจอง}', 'ยืนยันแล้ว')">ยืนยัน</button>
+          </td>
+        </tr>
+      `).join('');
+    }
 
-            <!-- Content Area -->
-            <div class="md:col-span-3 space-y-6">
-                <!-- Bookings Table Section -->
-                <div id="bookingsSection" class="bg-white rounded-2xl shadow-sm p-6">
-                    <h2 class="text-lg font-bold mb-4">รายการรอตรวจสอบ (Pending Verification)</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
-                                <tr>
-                                    <th class="p-3">Booking ID</th>
-                                    <th class="p-3">ลูกค้า / LINE</th>
-                                    <th class="p-3">ห้องพัก</th>
-                                    <th class="p-3">ยอดมัดจำ</th>
-                                    <th class="p-3">สลิป</th>
-                                    <th class="p-3">จัดการ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pendingList">
-                                <tr>
-                                    <td colspan="6" class="p-10 text-center text-gray-400">กำลังโหลดข้อมูล...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    function viewSlip(url) {
+      if(url) window.open(url, '_blank');
+      else alert("ไม่มีรูปสลิป");
+    }
 
-                <!-- Config Section (Hidden by default) -->
-                <div id="configSection" class="hidden space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                            <h3 class="font-bold mb-3">เพิ่มวันพิเศษ (มัดจำ 100%)</h3>
-                            <div class="space-y-3">
-                                <input type="date" id="specialDate" class="w-full border p-2 rounded">
-                                <input type="text" id="specialNote" placeholder="ชื่อวัน (เช่น ปีใหม่)" class="w-full border p-2 rounded">
-                                <button onclick="alert('ฟังก์ชันนี้กำลังพัฒนา')" class="w-full bg-green-700 text-white p-2 rounded font-bold">บันทึก</button>
-                            </div>
-                        </div>
-                        <div class="bg-white rounded-2xl p-6 shadow-sm border">
-                            <h3 class="font-bold mb-3">สร้างโค้ดส่วนลด</h3>
-                            <div class="space-y-3">
-                                <input type="text" placeholder="CODE2024" class="w-full border p-2 rounded uppercase">
-                                <input type="number" placeholder="จำนวนเงินส่วนลด" class="w-full border p-2 rounded">
-                                <button onclick="alert('ฟังก์ชันนี้กำลังพัฒนา')" class="w-full bg-green-700 text-white p-2 rounded font-bold">เพิ่มโค้ด</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    async function updateStatus(id, status) {
+      if(!confirm(`ยืนยันการเปลี่ยนสถานะเป็น ${status}?`)) return;
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: "updateStatus", bookingId: id, status: status })
+      });
+      refreshData();
+    }
 
-    <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec'; // *** เปลี่ยนเป็น URL ของคุณ ***
-
-        // แสดง/ซ่อน Section
-        function showSection(section) {
-            document.getElementById('bookingsSection').classList.toggle('hidden', section !== 'bookings');
-            document.getElementById('configSection').classList.toggle('hidden', section !== 'config');
-        }
-
-        // ดึงข้อมูลการจอง
-        async function fetchBookings() {
-            const tbody = document.getElementById('pendingList');
-            tbody.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-gray-400">กำลังโหลดข้อมูล...</td></tr>';
-            
-            try {
-                // ในที่นี้เราจะใช้ action=getInitialData หรือสร้าง action ใหม่ใน backend.js เพื่อดึงรายการจอง
-                const response = await fetch(`${SCRIPT_URL}?action=getInitialData`);
-                const data = await response.json();
-                
-                // หมายเหตุ: โค้ดนี้สมมติว่าคุณอัปเดต backend ให้ส่งรายการจองมาด้วย
-                // หากยังไม่ได้อัปเดต จะแสดง Mockup เพื่อความสวยงามก่อน
-                renderMockData(); 
-            } catch (error) {
-                console.error('Error:', error);
-                renderMockData(); // แสดงตัวอย่างถ้าติดต่อ Server ไม่ได้
-            }
-        }
-
-        function renderMockData() {
-            const tbody = document.getElementById('pendingList');
-            const mock = [
-                { id: 'BK67001', name: 'คุณสมศักดิ์', line: 'Somsak_LINE', room: 'บ้านพักริมน้ำ 1', deposit: 1200, slip: '#', status: 'รอการยืนยัน' },
-                { id: 'BK67002', name: 'คุณจิตรลดา', line: 'Jit_Official', room: 'ขนำแฝด 1-2', deposit: 2500, slip: '#', status: 'รอการยืนยัน' }
-            ];
-
-            tbody.innerHTML = mock.map(item => `
-                <tr class="border-t hover:bg-gray-50 transition">
-                    <td class="p-3 font-mono text-xs">${item.id}</td>
-                    <td class="p-3">
-                        <div class="font-bold">${item.name}</div>
-                        <div class="text-xs text-gray-500">LINE: ${item.line}</div>
-                    </td>
-                    <td class="p-3 text-xs">${item.room}</td>
-                    <td class="p-3 font-bold text-green-600">${item.deposit.toLocaleString()}.-</td>
-                    <td class="p-3"><a href="${item.slip}" target="_blank" class="text-blue-500 underline text-xs">ดูรูปสลิป</a></td>
-                    <td class="p-3 flex gap-2">
-                        <button onclick="updateBookingStatus('${item.id}', 'confirm')" class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700 transition">ยืนยัน</button>
-                        <button onclick="updateBookingStatus('${item.id}', 'reject')" class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600 transition">ปฏิเสธ</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        // อัปเดตสถานะการจอง
-        async function updateBookingStatus(bookingId, actionType) {
-            if (!confirm(`ยืนยันการ${actionType === 'confirm' ? 'อนุมัติ' : 'ปฏิเสธ'} การจองเลขที่ ${bookingId}?`)) return;
-
-            document.getElementById('loadingOverlay').classList.remove('hidden');
-
-            try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'updateStatus',
-                        payload: {
-                            bookingId: bookingId,
-                            status: actionType === 'confirm' ? 'ยืนยันแล้ว' : 'ถูกปฏิเสธ'
-                        }
-                    })
-                });
-
-                const result = await response.json();
-                if (result.status === 'success') {
-                    alert('ดำเนินการเรียบร้อยแล้ว ระบบจะส่ง Flex Message แจ้งลูกค้าอัตโนมัติ');
-                    fetchBookings();
-                } else {
-                    alert('เกิดข้อผิดพลาด: ' + result.message);
-                }
-            } catch (error) {
-                alert('ไม่สามารถเชื่อมต่อกับ Server ได้ (ตรวจสอบ Script URL)');
-            } finally {
-                document.getElementById('loadingOverlay').classList.add('hidden');
-            }
-        }
-
-        // เริ่มต้นโหลดข้อมูล
-        window.onload = fetchBookings;
-    </script>
+    window.onload = refreshData;
+  </script>
 </body>
 </html>
