@@ -10,26 +10,10 @@
     <style>
         body { font-family: 'Kanit', sans-serif; background-color: #f3f4f6; }
         .stepper-active { color: #059669; border-bottom: 3px solid #059669; }
-        
-        .card-selected { 
-            border: 3px solid #047857; 
-            background-color: #065f46 !important; 
-            color: white !important;
-            transform: scale(1.02);
-            transition: all 0.2s ease;
-        }
+        .card-selected { border: 3px solid #047857; background-color: #065f46 !important; color: white !important; transform: scale(1.02); transition: all 0.2s ease; }
         .card-selected h3, .card-selected p { color: white !important; }
-        .card-selected .guest-control { background-color: #064e3b; border-top: 1px solid #065f46; }
-
-        .card-disabled { 
-            opacity: 0.6; 
-            background-color: #e5e7eb !important; 
-            cursor: not-allowed !important; 
-            filter: grayscale(1);
-            border: 1px dashed #9ca3af !important;
-        }
-        .card-disabled button { display: none; }
-
+        .guest-control-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background-color: rgba(255, 255, 255, 0.2); font-weight: bold; }
+        .card-disabled { opacity: 0.6; background-color: #e5e7eb !important; cursor: not-allowed !important; filter: grayscale(1); border: 1px dashed #9ca3af !important; }
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -44,27 +28,15 @@
         <!-- Header -->
         <div class="bg-emerald-900 text-white p-6 rounded-b-[2.5rem] shadow-lg">
             <h1 class="text-2xl font-semibold">ขนำลุงดำ แคมป์ปิ้ง</h1>
-            <p class="text-emerald-200 text-sm">จองห้องพักออนไลน์</p>
+            <p class="text-emerald-200 text-sm">จองห้องพักออนไลน์ (จองล่วงหน้า 1 วัน)</p>
         </div>
 
         <!-- Stepper -->
         <div class="flex justify-around bg-white/80 backdrop-blur-md p-4 sticky top-0 z-10 border-b">
-            <div id="step1-btn" class="flex flex-col items-center text-xs stepper-active">
-                <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-1 font-bold">1</div>
-                <span>วันที่</span>
-            </div>
-            <div id="step2-btn" class="flex flex-col items-center text-xs text-gray-400">
-                <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-1 font-bold">2</div>
-                <span>เลือกห้อง</span>
-            </div>
-            <div id="step3-btn" class="flex flex-col items-center text-xs text-gray-400">
-                <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-1 font-bold">3</div>
-                <span>อาหาร</span>
-            </div>
-            <div id="step4-btn" class="flex flex-col items-center text-xs text-gray-400">
-                <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-1 font-bold">4</div>
-                <span>ชำระเงิน</span>
-            </div>
+            <div id="step1-btn" class="flex flex-col items-center text-xs stepper-active"><div class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-1 font-bold">1</div><span>วันที่</span></div>
+            <div id="step2-btn" class="flex flex-col items-center text-xs text-gray-400"><div class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-1 font-bold">2</div><span>เลือกห้อง</span></div>
+            <div id="step3-btn" class="flex flex-col items-center text-xs text-gray-400"><div class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-1 font-bold">3</div><span>อาหาร</span></div>
+            <div id="step4-btn" class="flex flex-col items-center text-xs text-gray-400"><div class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-1 font-bold">4</div><span>ชำระเงิน</span></div>
         </div>
 
         <div class="p-5 overflow-y-auto" style="height: calc(100vh - 210px);">
@@ -82,14 +54,14 @@
                     </div>
                 </div>
                 <div class="p-4 bg-amber-50 rounded-xl text-amber-800 text-xs flex gap-3">
-                    <span class="text-lg">ℹ️</span>
-                    <p>ระบบจะคำนวณมัดจำตามนโยบายของวันที่ท่านเลือกโดยอัตโนมัติ</p>
+                    <span class="text-lg">⚠️</span>
+                    <p>ขออภัยค่ะ ระบบไม่เปิดรับจองในวันที่เข้าพักโดยตรง ท่านต้องจองล่วงหน้าอย่างน้อย 1 วันค่ะ</p>
                 </div>
             </div>
 
             <!-- STEP 2: ROOMS -->
             <div id="step2" class="fade-in hidden">
-                <h2 class="text-lg font-bold mb-4 text-gray-800">เลือกห้องพัก</h2>
+                <h2 class="text-lg font-bold mb-4 text-gray-800">เลือกห้องพักและระบุจำนวนท่าน</h2>
                 <div id="roomList" class="space-y-4"></div>
             </div>
 
@@ -102,12 +74,22 @@
             <!-- STEP 4: PAYMENT -->
             <div id="step4" class="fade-in hidden">
                 <h2 class="text-lg font-bold mb-4 text-gray-800">ยืนยันและชำระมัดจำ</h2>
-                <div class="bg-emerald-50 p-4 rounded-2xl mb-6 text-sm border border-emerald-100">
+                <div class="bg-emerald-50 p-4 rounded-2xl mb-4 text-sm border border-emerald-100">
                     <div id="summaryItems" class="space-y-1"></div>
-                    <div class="border-t my-2"></div>
+                    <div id="summaryDiscount" class="text-emerald-600 font-bold hidden"></div>
+                    <div class="border-t my-2 border-emerald-200"></div>
                     <div class="flex justify-between text-lg font-bold text-emerald-900">
-                        <span>ยอดรวม:</span> <span id="summaryTotal">฿0</span>
+                        <span>ยอดรวมสุทธิ:</span> <span id="summaryTotal">฿0</span>
                     </div>
+                </div>
+
+                <!-- Promo Code -->
+                <div class="mb-6">
+                    <div class="flex gap-2">
+                        <input type="text" id="promoInput" placeholder="โค้ดส่วนลด" class="flex-1 p-3 bg-gray-50 border rounded-xl outline-none focus:border-emerald-500 uppercase">
+                        <button onclick="applyPromo()" class="px-4 bg-emerald-700 text-white rounded-xl font-bold text-sm">ใช้โค้ด</button>
+                    </div>
+                    <p id="promoMsg" class="text-[10px] mt-1 ml-1"></p>
                 </div>
 
                 <div class="space-y-3 mb-6">
@@ -118,12 +100,13 @@
                 <div class="bg-gray-900 text-white p-6 rounded-[2rem] text-center mb-6">
                     <p class="text-xs text-gray-400 mb-1">ยอดมัดจำที่ต้องชำระ</p>
                     <p class="text-4xl font-bold text-emerald-400" id="depositAmount">฿0</p>
-                    <p class="text-[10px] text-gray-500 mt-2" id="depositText">* มัดจำห้อง 50% และค่าอาหารเต็มจำนวน</p>
+                    <p class="text-[10px] text-gray-500 mt-2" id="depositText"></p>
                 </div>
 
                 <div class="flex flex-col items-center p-4 border-2 border-dashed border-emerald-200 rounded-[2rem] mb-6">
                     <img id="qrCodeImg" class="w-48 h-48 rounded-xl mb-3">
                     <p class="font-bold text-gray-800">พร้อมเพย์ 061-592-4262</p>
+                    <p class="font-bold text-gray-800">อลงกต ทวีผ่อง</p>
                 </div>
 
                 <div class="mb-10">
@@ -139,7 +122,6 @@
             </div>
         </div>
 
-        <!-- Nav -->
         <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-white border-t flex gap-3">
             <button id="prevBtn" onclick="prevStep()" class="flex-1 py-4 border-2 border-emerald-800 text-emerald-800 rounded-2xl font-bold hidden">กลับ</button>
             <button id="nextBtn" onclick="nextStep()" class="flex-[2] py-4 bg-emerald-800 text-white rounded-2xl font-bold">ถัดไป</button>
@@ -161,32 +143,48 @@
             { id: 'tent', name: 'ลานกางเต็นท์', min: 1, max: 20, rates: { 'per_person': 150 }, img: 'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=400' }
         ];
 
+        const foodMenu = [
+            { id: 'f1', name: 'ชุดหมูกระทะลุงดำ', price: 390 },
+            { id: 'f2', name: 'ชุดไก่กระทะลุงดำ', price: 390 },
+            { id: 'f3', name: 'ชุดชาบูหมูลุงดำ', price: 390 }
+            { id: 'f4', name: 'ชุดชาบูไก่ลุงดำ', price: 390 }
+            { id: 'f5', name: 'เซ็ตอาหารพื้นบ้าน', price: 390 }
+        ];
+
         let state = {
             step: 1,
             checkin: '', checkout: '',
-            bookings: [],
-            depositPolicies: [],
-            selectedRooms: [],
-            selectedFoods: [],
-            total: 0, deposit: 0,
-            currentRate: 50
+            bookings: [], depositPolicies: [], promoCodes: [],
+            selectedRooms: [], selectedFoods: [],
+            total: 0, deposit: 0, currentRate: 50,
+            activePromo: null, discountAmount: 0
         };
 
-        const foodMenu = [
-            { id: 'f1', name: 'ชุดหมูกระทะลุงดำ', price: 390, img: 'https://images.unsplash.com/photo-1560684352-8497838a2229?w=400' },
-            { id: 'f2', name: 'ชุดไก่กระทะลุงดำ', price: 390, img: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400' },
-            { id: 'f3', name: 'ชุดชาบูหมูลุงดำ', price: 390, img: 'https://images.unsplash.com/photo-1555126634-323283e090fa?w=400' }
-        ];
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
 
         async function init() {
             showLoading("กำลังโหลดข้อมูล...");
             try { await liff.init({ liffId: LIFF_ID }); await fetchData(); } catch(e){}
             hideLoading();
             
-            const today = new Date();
-            const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-            document.getElementById('checkin').valueAsDate = today;
-            document.getElementById('checkout').valueAsDate = tomorrow;
+            // ตั้งค่าวันที่เริ่มต้นคือ "วันพรุ่งนี้"
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const afterTomorrow = new Date(tomorrow);
+            afterTomorrow.setDate(tomorrow.getDate() + 1);
+
+            const checkinEl = document.getElementById('checkin');
+            const checkoutEl = document.getElementById('checkout');
+
+            // ล็อคไม่ให้เลือกวันก่อนพรุ่งนี้
+            const minDateStr = formatDate(tomorrow);
+            checkinEl.min = minDateStr;
+            checkoutEl.min = formatDate(afterTomorrow);
+            
+            checkinEl.value = minDateStr;
+            checkoutEl.value = formatDate(afterTomorrow);
         }
 
         async function fetchData() {
@@ -194,6 +192,7 @@
             const data = await res.json();
             state.bookings = data.bookings || [];
             state.depositPolicies = data.deposits || [];
+            state.promoCodes = data.promoCodes || [];
         }
 
         function getDepositRate(dateStr) {
@@ -216,8 +215,25 @@
             if(state.step === 1) {
                 state.checkin = document.getElementById('checkin').value;
                 state.checkout = document.getElementById('checkout').value;
+                
                 if(!state.checkin || !state.checkout) return alert("เลือกวันที่ก่อน");
+
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const checkinDate = new Date(state.checkin);
+                checkinDate.setHours(0,0,0,0);
+
+                // ตรวจสอบ Logic: ห้ามจองวันเดียวกัน (ต้องจองล่วงหน้า 1 วันขึ้นไป)
+                if(checkinDate <= today) {
+                    return alert("ขออภัยค่ะ ต้องจองล่วงหน้าอย่างน้อย 1 วัน (ไม่สามารถจองเข้าพักในวันนี้ได้)");
+                }
+
+                if(new Date(state.checkout) <= checkinDate) {
+                    return alert("วันที่เช็คเอาท์ต้องอยู่หลังวันที่เช็คอิน");
+                }
+
                 state.currentRate = getDepositRate(state.checkin);
+                state.activePromo = null;
             }
             if(state.step === 2 && state.selectedRooms.length === 0) return alert("เลือกห้องพักอย่างน้อย 1 ห้อง");
             if(state.step === 4) return submitBooking();
@@ -243,22 +259,12 @@
                 const isBooked = state.bookings.some(b => b.Status !== 'ยกเลิก' && (b.RoomsInfo || "").includes(room.name) && (new Date(state.checkin) < new Date(b.CheckOut) && new Date(state.checkout) > new Date(b.CheckIn)));
                 const selected = state.selectedRooms.find(r => r.id === room.id);
                 const card = document.createElement('div');
-                card.className = `bg-white p-3 rounded-2xl border-2 flex items-center gap-3 ${isBooked ? 'card-disabled' : (selected ? 'card-selected' : 'border-gray-100')}`;
-                card.innerHTML = `
-                    <img src="${room.img}" class="w-16 h-16 rounded-xl object-cover">
-                    <div class="flex-1">
-                        <p class="font-bold text-sm">${room.name}</p>
-                        <p class="text-[10px] text-gray-500">รองรับ ${room.min}-${room.max} ท่าน</p>
-                    </div>
-                    ${!isBooked ? `<button onclick="toggleRoom('${room.id}')" class="px-4 py-2 rounded-xl text-xs font-bold ${selected ? 'bg-white text-emerald-800' : 'bg-emerald-800 text-white'}">${selected ? 'ยกเลิก' : 'เลือก'}</button>` : '<span class="text-xs text-red-500 font-bold">ไม่ว่าง</span>'}
-                `;
-                if(selected) {
-                    const ctrl = document.createElement('div');
-                    ctrl.className = "flex items-center gap-3 bg-black/5 p-2 rounded-xl mt-2 ml-auto";
-                    ctrl.innerHTML = `<button onclick="updateGuests('${room.id}', -1)">-</button><span class="text-sm font-bold">${selected.guests}</span><button onclick="updateGuests('${room.id}', 1)">+</button>`;
-                    card.appendChild(ctrl);
+                card.className = `bg-white p-3 rounded-2xl border-2 transition-all ${isBooked ? 'card-disabled' : (selected ? 'card-selected shadow-lg' : 'border-gray-100')}`;
+                let html = `<div class="flex items-center gap-3"><img src="${room.img}" class="w-16 h-16 rounded-xl object-cover"><div class="flex-1"><p class="font-bold text-sm">${room.name}</p><p class="text-[10px] text-gray-500">จำกัด ${room.min}-${room.max} ท่าน</p></div>${!isBooked ? `<button onclick="toggleRoom('${room.id}')" class="px-4 py-2 rounded-xl text-xs font-bold ${selected ? 'bg-white text-emerald-800' : 'bg-emerald-800 text-white'}">${selected ? 'ยกเลิก' : 'เลือก'}</button>` : '<span class="text-xs text-red-500 font-bold">ไม่ว่าง</span>'}</div>`;
+                if(selected && !isBooked) {
+                    html += `<div class="mt-3 pt-3 border-t border-emerald-700/30 flex justify-between items-center"><span class="text-xs font-medium">จำนวนผู้เข้าพัก:</span><div class="flex items-center gap-4"><button onclick="updateGuests('${room.id}', -1)" class="guest-control-btn">-</button><span class="text-lg font-bold min-w-[60px] text-center">${selected.guests} <small class="text-[10px] font-normal">ท่าน</small></span><button onclick="updateGuests('${room.id}', 1)" class="guest-control-btn">+</button></div></div>`;
                 }
-                list.appendChild(card);
+                card.innerHTML = html; list.appendChild(card);
             });
         }
 
@@ -282,10 +288,7 @@
                 const sel = state.selectedFoods.find(f => f.id === food.id);
                 const div = document.createElement('div');
                 div.className = "p-3 bg-gray-50 rounded-2xl flex items-center justify-between";
-                div.innerHTML = `<span>${food.name} (฿${food.price})</span>
-                    <div class="flex gap-3">
-                        ${sel ? `<button onclick="addFood('${food.id}',-1)">-</button><b>${sel.qty}</b><button onclick="addFood('${food.id}',1)">+</button>` : `<button onclick="addFood('${food.id}',1)" class="text-emerald-700 font-bold underline">เพิ่ม</button>`}
-                    </div>`;
+                div.innerHTML = `<span>${food.name} (฿${food.price})</span><div class="flex gap-3">${sel ? `<button onclick="addFood('${food.id}',-1)">-</button><b>${sel.qty}</b><button onclick="addFood('${food.id}',1)">+</button>` : `<button onclick="addFood('${food.id}',1)" class="text-emerald-700 font-bold underline">เพิ่ม</button>`}</div>`;
                 list.appendChild(div);
             });
         }
@@ -297,17 +300,46 @@
             renderFoods();
         }
 
+        function applyPromo() {
+            const input = document.getElementById('promoInput').value.trim().toUpperCase();
+            const msg = document.getElementById('promoMsg');
+            const found = state.promoCodes.find(p => p.code === input);
+            const todayStr = formatDate(new Date());
+
+            if(!found) { msg.innerText = "❌ ไม่พบโค้ดนี้"; msg.className = "text-[10px] mt-1 ml-1 text-red-500"; state.activePromo = null; }
+            else if(todayStr < found.start || todayStr > found.end) { msg.innerText = "❌ โค้ดหมดอายุหรือยังไม่เริ่มใช้งาน"; msg.className = "text-[10px] mt-1 ml-1 text-red-500"; state.activePromo = null; }
+            else {
+                state.activePromo = found;
+                msg.innerText = `✅ ใช้โค้ดสำเร็จ: ลด ${found.value}${found.type}`;
+                msg.className = "text-[10px] mt-1 ml-1 text-emerald-600 font-bold";
+            }
+            renderSummary();
+        }
+
         function renderSummary() {
             const nights = Math.max(1, (new Date(state.checkout) - new Date(state.checkin)) / 86400000);
             const roomsPrice = state.selectedRooms.reduce((sum, r) => sum + (getRoomPrice(roomData.find(rd => rd.id === r.id), r.guests) * nights), 0);
             const foodsPrice = state.selectedFoods.reduce((sum, f) => sum + (f.price * f.qty), 0);
-            state.total = roomsPrice + foodsPrice;
-            state.deposit = Math.ceil((roomsPrice * (state.currentRate / 100)) + foodsPrice);
             
-            document.getElementById('summaryItems').innerHTML = state.selectedRooms.map(r => `<div>${r.name} x ${nights} คืน: ฿${(getRoomPrice(roomData.find(rd => rd.id === r.id), r.guests) * nights).toLocaleString()}</div>`).join('');
+            let discount = 0;
+            if(state.activePromo) {
+                if(state.activePromo.type === '%') discount = Math.floor(roomsPrice * (state.activePromo.value / 100));
+                else discount = Math.min(roomsPrice, state.activePromo.value);
+            }
+            state.discountAmount = discount;
+
+            state.total = (roomsPrice - discount) + foodsPrice;
+            state.deposit = Math.ceil(((roomsPrice - discount) * (state.currentRate / 100)) + foodsPrice);
+            
+            document.getElementById('summaryItems').innerHTML = state.selectedRooms.map(r => `<div class="flex justify-between"><span>${r.name} (${r.guests} ท่าน) x ${nights} คืน</span><span>฿${(getRoomPrice(roomData.find(rd => rd.id === r.id), r.guests) * nights).toLocaleString()}</span></div>`).join('') + state.selectedFoods.map(f => `<div class="flex justify-between text-gray-500"><span>${f.name} x ${f.qty}</span><span>฿${(f.price * f.qty).toLocaleString()}</span></div>`).join('');
+            
+            const discEl = document.getElementById('summaryDiscount');
+            if(discount > 0) { discEl.innerText = `ส่วนลดที่พัก: -฿${discount.toLocaleString()}`; discEl.classList.remove('hidden'); }
+            else { discEl.classList.add('hidden'); }
+
             document.getElementById('summaryTotal').innerText = `฿${state.total.toLocaleString()}`;
             document.getElementById('depositAmount').innerText = `฿${state.deposit.toLocaleString()}`;
-            document.getElementById('depositText').innerText = `* มัดจำห้อง ${state.currentRate}% และค่าอาหารเต็มจำนวน`;
+            document.getElementById('depositText').innerText = `* มัดจำห้อง ${state.currentRate}% (หลังหักส่วนลด) + ค่าอาหารเต็มจำนวน`;
             document.getElementById('qrCodeImg').src = `https://promptpay.io/0615924262/${state.deposit}.png`;
         }
 
@@ -335,27 +367,29 @@
             showLoading("กำลังส่งข้อมูล...");
             const reader = new FileReader(); reader.readAsDataURL(slip);
             reader.onload = async () => {
-                const res = await fetch(APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        custName: name, custTel: tel,
-                        checkin: state.checkin, checkout: state.checkout,
-                        rooms: JSON.stringify(state.selectedRooms),
-                        foods: JSON.stringify(state.selectedFoods),
-                        total: state.total, deposit: state.deposit,
-                        slip: reader.result
-                    })
-                });
-                const data = await res.json();
-                if(data.status === 'success') { alert("จองสำเร็จ!"); liff.closeWindow(); }
-                else alert("ผิดพลาด: " + data.message);
-                hideLoading();
+                try {
+                    const res = await fetch(APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            custName: name, custTel: tel,
+                            checkin: state.checkin, checkout: state.checkout,
+                            rooms: JSON.stringify(state.selectedRooms),
+                            foods: JSON.stringify(state.selectedFoods),
+                            promoCode: state.activePromo ? state.activePromo.code : null,
+                            total: state.total, deposit: state.deposit,
+                            slip: reader.result
+                        })
+                    });
+                    const data = await res.json();
+                    if(data.status === 'success') { alert("จองสำเร็จ! กรุณารอแอดมินตรวจสอบความถูกต้องของสลิปค่ะ"); liff.closeWindow(); }
+                    else alert("ผิดพลาด: " + data.message);
+                } catch (e) { alert("เกิดข้อผิดพลาดในการเชื่อมต่อ"); }
+                finally { hideLoading(); }
             };
         }
 
         function showLoading(t) { document.getElementById('loadingText').innerText = t; document.getElementById('loading').classList.remove('hidden'); }
         function hideLoading() { document.getElementById('loading').classList.add('hidden'); }
-
         window.onload = init;
     </script>
 </body>
