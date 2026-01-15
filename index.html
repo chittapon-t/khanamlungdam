@@ -3,568 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ขนำลุงดำ แคมป์ปิ้ง</title>
+    <title>ขนำลุงดำ แคมป์ปิ้ง - Booking</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #f0fdf4; } /* Emerald-50 */
-        .card-selected { border: 2px solid #047857; background-color: #d1fae5; }
-        .card-disabled { opacity: 0.5; background-color: #f3f4f6; cursor: not-allowed; pointer-events: none; }
-        .step-active { background-color: #047857; color: white; }
-        .step-inactive { background-color: #e5e7eb; color: #9ca3af; }
-    </style>
+    <link href="style.css" rel="stylesheet">
 </head>
-<body class="pb-24">
+<body class="pb-20">
 
-    <!-- Navbar -->
-    <nav class="bg-emerald-800 text-white p-4 shadow-lg sticky top-0 z-50">
-        <div class="flex justify-between items-center max-w-md mx-auto">
-            <h1 class="font-bold text-lg">⛺ ขนำลุงดำ Booking</h1>
-            <div id="userProfile" class="flex items-center text-xs opacity-80">
-                <span class="mr-2">Guest</span>
-                <div class="w-8 h-8 rounded-full bg-gray-300"></div>
-            </div>
+    <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white p-5 rounded-lg shadow-xl text-center">
+            <div class="spinner mb-3"></div>
+            <p class="text-emerald-800 font-bold">กำลังดำเนินการ...</p>
+        </div>
+    </div>
+
+    <nav class="bg-emerald-800 text-white p-4 sticky top-0 z-40 flex justify-between items-center shadow-md">
+        <h1 class="font-bold text-lg">ขนำลุงดำ แคมป์ปิ้ง</h1>
+        <div class="flex items-center space-x-2 text-sm">
+            <img id="userImg" class="w-8 h-8 rounded-full border border-white" src="https://via.placeholder.com/32" alt="Profile">
+            <span id="userName" class="hidden sm:inline">...</span>
         </div>
     </nav>
 
-    <!-- Main App -->
-    <main id="app" class="max-w-md mx-auto p-4 space-y-6">
-        
-        <!-- Steps Indicator -->
-        <div class="flex justify-between items-center mb-6 text-xs font-bold">
-            <div id="step1-ind" class="flex-1 text-center py-2 rounded-l-lg step-active">1. วันพัก</div>
-            <div id="step2-ind" class="flex-1 text-center py-2 step-inactive">2. ห้อง/อาหาร</div>
-            <div id="step3-ind" class="flex-1 text-center py-2 rounded-r-lg step-inactive">3. ชำระเงิน</div>
-        </div>
-
-        <!-- STEP 1: Date -->
-        <section id="step1">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-emerald-100">
-                <h2 class="text-emerald-800 font-bold mb-4 flex items-center">
-                    🗓️ เลือกวันเข้าพัก
-                </h2>
-                <div class="space-y-4">
+    <main id="app" class="max-w-md mx-auto p-4">
+        <!-- STEP 1 -->
+        <section id="step1" class="space-y-6 fade-in">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-100">
+                <h2 class="font-semibold text-emerald-800 mb-3">1. เลือกวันเข้าพัก</h2>
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1">วันเช็คอิน (14:00 น.)</label>
-                        <input type="date" id="checkin" class="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-emerald-500 outline-none" onchange="handleDateChange()">
+                        <label class="text-xs text-gray-500 font-bold uppercase">เช็คอิน</label>
+                        <input type="date" id="checkin" class="w-full border rounded-lg p-2 focus:ring-emerald-500" onchange="handleDateChange()">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1">วันเช็คเอาท์ (12:00 น.)</label>
-                        <input type="date" id="checkout" class="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-emerald-500 outline-none" onchange="handleDateChange()">
+                        <label class="text-xs text-gray-500 font-bold uppercase">เช็คเอาท์</label>
+                        <input type="date" id="checkout" class="w-full border rounded-lg p-2 focus:ring-emerald-500" onchange="handleDateChange()">
                     </div>
-                    <div id="dateAlert" class="hidden p-3 bg-red-50 text-red-600 text-xs rounded-lg mt-2"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- STEP 2: Rooms & Food -->
-        <section id="step2" class="hidden space-y-4">
-            <!-- Room Selection -->
-            <div>
-                <h3 class="font-bold text-emerald-800 mb-2">🏠 เลือกห้องพัก</h3>
-                <div id="roomList" class="space-y-3">
-                    <!-- JS Injects Rooms Here -->
-                    <div class="text-center py-8 text-gray-400">กำลังโหลดข้อมูลห้องพัก...</div>
                 </div>
             </div>
 
-            <!-- Food Selection -->
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-100 mt-6">
-                <h3 class="font-bold text-emerald-800 mb-4">🍳 สั่งอาหารล่วงหน้า (เย็น)</h3>
-                <div id="foodList" class="space-y-3"></div>
-                <p class="text-[10px] text-orange-500 mt-2">* ราคาอาหารไม่รวมในส่วนลด / ต้องมัดจำ 100%</p>
+            <div id="roomSelectionArea" class="hidden fade-in space-y-4">
+                <h2 class="font-semibold text-emerald-800">2. เลือกห้องพัก</h2>
+                <div id="roomList" class="space-y-3"></div>
             </div>
         </section>
 
-        <!-- STEP 3: Summary & Payment -->
-        <section id="step3" class="hidden space-y-4">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-emerald-100">
-                <h3 class="font-bold text-emerald-800 border-b pb-2 mb-3">📝 สรุปรายการจอง</h3>
+        <!-- STEP 2 -->
+        <section id="step2" class="hidden space-y-6">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-100">
+                <h2 class="font-semibold text-emerald-800 mb-3">3. สั่งอาหารล่วงหน้า</h2>
+                <div id="foodList" class="space-y-4"></div>
+            </div>
+        </section>
+
+        <!-- STEP 3 -->
+        <section id="step3" class="hidden space-y-6">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-100">
+                <h2 class="font-semibold text-emerald-800 mb-4 text-center">สรุปรายการจอง</h2>
                 
-                <!-- Promo Code -->
-                <div class="flex space-x-2 mb-4">
-                    <input type="text" id="promoCode" placeholder="ใส่โค้ดส่วนลด" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase">
-                    <button onclick="applyPromo()" class="bg-emerald-600 text-white px-4 rounded-lg text-sm font-bold">ใช้โค้ด</button>
-                </div>
-                <p id="promoMsg" class="text-xs mb-2"></p>
-
-                <div id="summaryDetails" class="text-sm space-y-2 text-gray-600"></div>
-
-                <div class="mt-4 pt-4 border-t space-y-1">
-                    <div class="flex justify-between"><span>รวมค่าที่พัก</span><span id="sumRoom">0</span></div>
-                    <div class="flex justify-between text-red-500 text-xs hidden" id="discountRow"><span>ส่วนลด</span><span id="sumDisc">0</span></div>
-                    <div class="flex justify-between"><span>ค่าอาหาร</span><span id="sumFood">0</span></div>
-                    <div class="flex justify-between font-bold text-lg text-emerald-800 mt-2"><span>ราคารวมทั้งสิ้น</span><span id="sumTotal">0</span></div>
+                <div class="mb-4 bg-gray-50 p-3 rounded-lg border border-dashed">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">โค้ดส่วนลด</label>
+                    <div class="flex space-x-2 mt-1">
+                        <input type="text" id="promoInput" class="flex-1 border rounded p-2 text-sm uppercase" placeholder="กรอกโค้ด">
+                        <button onclick="applyPromo()" class="bg-emerald-700 text-white px-4 py-2 rounded text-xs font-bold">ใช้</button>
+                    </div>
+                    <p id="promoStatus" class="hidden"></p>
                 </div>
 
-                <div class="mt-4 bg-emerald-50 p-4 rounded-xl border border-emerald-200 text-center">
-                    <p class="text-xs text-emerald-800 font-bold mb-1">ยอดมัดจำที่ต้องโอน</p>
-                    <p id="depositAmount" class="text-3xl font-bold text-red-600">฿0</p>
-                    <p class="text-[10px] text-gray-500 mt-1" id="depositConditionText">(50% ค่าห้อง + 100% ค่าอาหาร)</p>
-                </div>
-            </div>
-
-            <!-- Customer Info -->
-            <div class="bg-white p-4 rounded-xl shadow-sm">
-                <h3 class="font-bold text-gray-700 mb-3 text-sm">ข้อมูลผู้จอง</h3>
-                <input type="text" id="cName" placeholder="ชื่อ-นามสกุล" class="w-full border rounded-lg p-2 mb-2 text-sm">
-                <input type="tel" id="cTel" placeholder="เบอร์โทรศัพท์" class="w-full border rounded-lg p-2 text-sm">
-            </div>
-
-            <!-- Payment -->
-            <div class="bg-white p-4 rounded-xl shadow-sm text-center">
-                <h3 class="font-bold text-gray-700 mb-3 text-sm">สแกนจ่ายมัดจำ</h3>
-                <img id="qrImage" src="" class="w-40 h-40 mx-auto mb-2 border rounded-lg">
-                <p class="text-xs font-bold">พร้อมเพย์: 061-592-4262 (อลงกต ทวีผ่อง)</p>
+                <div id="summaryContent" class="text-sm space-y-2 border-b pb-4 mb-4"></div>
                 
-                <div class="mt-4 text-left">
-                    <label class="block text-xs font-bold mb-1">แนบสลิปโอนเงิน</label>
-                    <input type="file" id="slipFile" accept="image/*" class="w-full text-xs text-gray-500 file:mr-2 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:bg-emerald-50 file:text-emerald-700">
+                <div class="space-y-3">
+                    <input type="text" id="custName" class="w-full border rounded-lg p-2" placeholder="ชื่อ-นามสกุล ผู้จอง">
+                    <input type="tel" id="custTel" class="w-full border rounded-lg p-2" placeholder="เบอร์โทรติดต่อ">
+                </div>
+            </div>
+
+            <div class="bg-emerald-50 p-6 rounded-xl border-2 border-dashed border-emerald-200 text-center">
+                <h3 class="font-bold text-emerald-800 mb-2 text-sm uppercase">ยอดมัดจำ</h3>
+                <p id="depositText" class="text-3xl font-bold text-red-600 mb-1">฿0.00</p>
+                
+                <div class="bg-white p-2 inline-block rounded-xl shadow-sm mb-4">
+                    <img id="qrCode" src="" class="w-48 h-48 mx-auto bg-gray-200">
+                </div>
+                
+                <p class="text-sm text-emerald-900 font-bold mb-4">อลงกต ทวีผ่อง (0615924262)</p>
+                
+                <div class="text-left bg-white p-3 rounded-lg border">
+                    <label class="block text-sm font-semibold mb-2">แนบสลิป</label>
+                    <input type="file" id="slip" accept="image/*" class="w-full text-xs">
                 </div>
             </div>
         </section>
-
     </main>
 
-    <!-- Footer Action -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-50">
-        <div class="max-w-md mx-auto flex justify-between items-center">
-            <div class="text-xs">
-                <p class="text-gray-500">ราคารวม</p>
-                <p id="footerTotal" class="font-bold text-emerald-700 text-lg">฿0</p>
-            </div>
-            <button id="nextBtn" onclick="nextStep()" class="bg-emerald-800 text-white px-8 py-3 rounded-xl font-bold shadow-lg disabled:bg-gray-300">ถัดไป</button>
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-between items-center max-w-md mx-auto z-40">
+        <div>
+            <p class="text-xs text-gray-500">ราคาสุทธิ</p>
+            <p id="totalPrice" class="text-xl font-bold text-emerald-700">฿0</p>
+        </div>
+        <div class="flex space-x-2">
+            <button id="btnPrev" onclick="changeStep(-1)" class="hidden bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold">กลับ</button>
+            <button id="btnNext" onclick="changeStep(1)" class="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold shadow">ถัดไป</button>
+            <button id="btnConfirm" onclick="submitBooking()" class="hidden bg-emerald-800 text-white px-6 py-2 rounded-lg font-bold shadow">ยืนยัน</button>
         </div>
     </div>
-
-    <!-- Loading -->
-    <div id="loading" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center">
-        <div class="bg-white p-4 rounded-xl flex items-center space-x-3">
-            <div class="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-            <span class="text-sm font-bold text-emerald-800">กำลังประมวลผล...</span>
-        </div>
-    </div>
-
-    <script>
-        // CONFIG - Replace with your deployed Web App URL
-        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec'; 
-        const LIFF_ID = '2008863563-tuai5kaC'; 
-
-        // STATE
-        let step = 1;
-        let bookingData = {
-            checkin: '', checkout: '', rooms: [], foods: [], 
-            totalRoom: 0, totalFood: 0, discount: 0, 
-            netTotal: 0, deposit: 0,
-            user: { id: '', name: '' }
-        };
-        let serverData = { bookings: [], specialDates: [], promoCodes: [] };
-
-        // DATA MOCKUP (Matches Prompt)
-        const ROOMS = [
-            { id: 'h1', name: 'โฮมสเตย์หนำโป', min: 4, max: 8, rates: { '4-5': 1600, '6-8': 2200 } },
-            { id: 'b1', name: 'บ้านพักริมน้ำ 1', min: 1, max: 3, rates: { '1-2': 1400, '3': 1750 } },
-            { id: 'b2', name: 'บ้านพักริมน้ำ 2', min: 1, max: 3, rates: { '1-2': 1400, '3': 1750 } },
-            { id: 't1', name: 'เต็นท์กระโจม 1', min: 1, max: 4, rates: { '1-2': 1200, '3-4': 1550 } },
-            { id: 't2', name: 'เต็นท์กระโจม 2', min: 1, max: 4, rates: { '1-2': 1200, '3-4': 1550 } },
-            { id: 'k1', name: 'เช่าเต็นท์สนาม K1', min: 1, max: 2, rates: { '1-2': 700 } },
-            { id: 'k2', name: 'เช่าเต็นท์สนาม K2', min: 1, max: 2, rates: { '1-2': 700 } },
-            { id: 'tent', name: 'ลานกางเต็นท์', min: 1, max: 20, rates: { 'person': 150 }, type: 'per_head' }
-        ];
-
-        const FOODS = [
-            { id: 'f1', name: 'ชุดหมูกระทะลุงดำ', price: 390 },
-            { id: 'f2', name: 'ชุดไก่กระทะลุงดำ', price: 390 },
-            { id: 'f3', name: 'ชุดชาบูหมูลุงดำ', price: 390 },
-            { id: 'f4', name: 'ชุดชาบูไก่ลุงดำ', price: 390 },
-            { id: 'f5', name: 'เซ็ตอาหารพื้นบ้าน', price: 390 }
-        ];
-
-        // INIT
-        window.onload = async () => {
-            document.getElementById('checkin').min = new Date().toISOString().split('T')[0];
-            renderFoods();
-            
-            // Liff Init
-            try {
-                await liff.init({ liffId: LIFF_ID });
-                if (liff.isLoggedIn()) {
-                    const profile = await liff.getProfile();
-                    bookingData.user = { id: profile.userId, name: profile.displayName };
-                    document.getElementById('userProfile').innerHTML = `
-                        <span class="mr-2 font-bold">${profile.displayName}</span>
-                        <img src="${profile.pictureUrl}" class="w-8 h-8 rounded-full border border-white">
-                    `;
-                    document.getElementById('cName').value = profile.displayName;
-                } else {
-                    liff.login();
-                }
-            } catch (e) { console.error(e); }
-
-            // Fetch Data
-            fetchData();
-        };
-
-        function fetchData() {
-            toggleLoading(true);
-            fetch(APP_SCRIPT_URL + '?action=getData')
-                .then(r => r.json())
-                .then(data => {
-                    serverData = data;
-                    console.log("Data loaded", data);
-                })
-                .catch(e => console.error(e))
-                .finally(() => toggleLoading(false));
-        }
-
-        // NAVIGATION
-        function nextStep() {
-            if (step === 1) {
-                if (!bookingData.checkin || !bookingData.checkout) return alert('กรุณาเลือกวันเข้าพัก');
-                checkAvailability(); // Calculate rooms availability
-                step = 2;
-            } else if (step === 2) {
-                if (bookingData.rooms.length === 0) return alert('กรุณาเลือกห้องพักอย่างน้อย 1 ห้อง');
-                // Validate Headcounts
-                for(let r of bookingData.rooms) {
-                    if(!r.guests) return alert(`กรุณาระบุจำนวนคนสำหรับ ${r.name}`);
-                }
-                calculateFinal();
-                step = 3;
-            } else if (step === 3) {
-                submitBooking();
-                return;
-            }
-            updateUI();
-        }
-
-        function updateUI() {
-            document.querySelectorAll('section').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`step${step}`).classList.remove('hidden');
-            
-            // Update Stepper
-            [1,2,3].forEach(i => {
-                const el = document.getElementById(`step${i}-ind`);
-                el.className = `flex-1 text-center py-2 ${i === 1 ? 'rounded-l-lg' : i === 3 ? 'rounded-r-lg' : ''} ${i === step ? 'step-active' : 'step-inactive'}`;
-            });
-
-            // Update Button
-            const btn = document.getElementById('nextBtn');
-            btn.innerText = step === 3 ? 'ยืนยันการจอง' : 'ถัดไป';
-            
-            if(step === 2) renderRooms();
-            if(step === 3) renderSummary();
-            
-            window.scrollTo(0,0);
-        }
-
-        // LOGIC: Step 1 & Availability
-        function handleDateChange() {
-            const cin = document.getElementById('checkin').value;
-            const cout = document.getElementById('checkout').value;
-            
-            if(cin && cout) {
-                if(new Date(cin) >= new Date(cout)) {
-                    document.getElementById('dateAlert').innerText = "วันออกต้องหลังวันเข้าพัก";
-                    document.getElementById('dateAlert').classList.remove('hidden');
-                    bookingData.checkin = '';
-                    return;
-                }
-                document.getElementById('dateAlert').classList.add('hidden');
-                bookingData.checkin = cin;
-                bookingData.checkout = cout;
-                // Reset rooms if date changes
-                bookingData.rooms = [];
-            }
-        }
-
-        function checkAvailability() {
-             // Simple client-side filter based on serverData
-             // In production, simpler to re-fetch but for now use loaded data
-             const start = new Date(bookingData.checkin);
-             const end = new Date(bookingData.checkout);
-             
-             bookingData.unavailableRooms = [];
-
-             if(serverData.bookings) {
-                serverData.bookings.forEach(bk => {
-                    if(bk.Status === 'ยกเลิก') return;
-                    const bStart = new Date(bk.CheckIn);
-                    const bEnd = new Date(bk.CheckOut);
-                    
-                    // Overlap logic
-                    if(start < bEnd && end > bStart) {
-                        // Extract room IDs from booking string "h1, b1"
-                        if(bk.RoomsID) {
-                            bk.RoomsID.split(', ').forEach(id => bookingData.unavailableRooms.push(id));
-                        }
-                    }
-                });
-             }
-        }
-
-        // LOGIC: Step 2 Rooms
-        function renderRooms() {
-            const html = ROOMS.map(r => {
-                const isFull = bookingData.unavailableRooms.includes(r.id) && r.id !== 'tent'; // Tent allows multiple
-                const isSelected = bookingData.rooms.find(x => x.id === r.id);
-                
-                return `
-                <div onclick="${isFull ? '' : `toggleRoom('${r.id}')`}" 
-                     class="bg-white p-4 rounded-xl border transition-all ${isFull ? 'card-disabled' : 'cursor-pointer'} ${isSelected ? 'card-selected' : 'border-gray-200'}">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h4 class="font-bold text-gray-800">${r.name}</h4>
-                            <p class="text-xs text-gray-500">พักได้ ${r.min}-${r.max} ท่าน</p>
-                            ${isFull ? '<span class="text-red-500 text-[10px] font-bold">❌ เต็มแล้ว</span>' : ''}
-                        </div>
-                        ${isSelected ? '<div class="w-6 h-6 bg-emerald-600 rounded-full flex items-center justify-center text-white text-xs">✓</div>' : ''}
-                    </div>
-                    
-                    ${isSelected ? `
-                    <div class="mt-3 pt-3 border-t" onclick="event.stopPropagation()">
-                        <label class="text-xs font-bold text-emerald-800">จำนวนผู้เข้าพัก:</label>
-                        <select onchange="updateGuest('${r.id}', this.value)" class="w-full mt-1 p-2 bg-emerald-50 rounded text-sm border-emerald-200 border">
-                            <option value="">เลือกจำนวน</option>
-                            ${generateOptions(r.min, r.max, isSelected.guests)}
-                        </select>
-                        <div class="text-right mt-2 font-bold text-emerald-700">฿${isSelected.price.toLocaleString()}</div>
-                    </div>
-                    ` : ''}
-                </div>`;
-            }).join('');
-            document.getElementById('roomList').innerHTML = html;
-        }
-
-        function generateOptions(min, max, selected) {
-            let opts = '';
-            for(let i=min; i<=max; i++) {
-                opts += `<option value="${i}" ${selected == i ? 'selected' : ''}>${i} ท่าน</option>`;
-            }
-            return opts;
-        }
-
-        function toggleRoom(rid) {
-            const idx = bookingData.rooms.findIndex(r => r.id === rid);
-            if(idx > -1) {
-                bookingData.rooms.splice(idx, 1);
-            } else {
-                const room = ROOMS.find(r => r.id === rid);
-                bookingData.rooms.push({ ...room, guests: 0, price: 0 });
-            }
-            renderRooms();
-            calcTempTotal();
-        }
-
-        function updateGuest(rid, val) {
-            const room = bookingData.rooms.find(r => r.id === rid);
-            const guests = parseInt(val);
-            room.guests = guests;
-            
-            // Price Logic
-            if(room.type === 'per_head') {
-                room.price = guests * 150;
-            } else {
-                // Tier pricing
-                for(let k in room.rates) {
-                    const [min, max] = k.split('-').map(Number);
-                    if(max) {
-                        if(guests >= min && guests <= max) room.price = room.rates[k];
-                    } else {
-                        // Single value '3'
-                        if(guests == min) room.price = room.rates[k];
-                    }
-                }
-            }
-            renderRooms();
-            calcTempTotal();
-        }
-
-        function renderFoods() {
-            const html = FOODS.map(f => `
-                <div class="flex justify-between items-center border-b pb-2 last:border-0">
-                    <div>
-                        <div class="font-medium text-sm">${f.name}</div>
-                        <div class="text-xs text-gray-500">฿${f.price}</div>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="changeFood('${f.id}', -1)" class="w-6 h-6 rounded bg-gray-200 font-bold">-</button>
-                        <span id="fq-${f.id}" class="w-6 text-center text-sm font-bold">0</span>
-                        <button onclick="changeFood('${f.id}', 1)" class="w-6 h-6 rounded bg-emerald-100 text-emerald-700 font-bold">+</button>
-                    </div>
-                </div>
-            `).join('');
-            document.getElementById('foodList').innerHTML = html;
-        }
-
-        function changeFood(fid, delta) {
-            const exist = bookingData.foods.find(f => f.id === fid);
-            if(exist) {
-                exist.qty += delta;
-                if(exist.qty <= 0) bookingData.foods = bookingData.foods.filter(f => f.id !== fid);
-            } else if(delta > 0) {
-                const fItem = FOODS.find(f => f.id === fid);
-                bookingData.foods.push({ ...fItem, qty: 1 });
-            }
-            // Update UI
-            const current = bookingData.foods.find(f => f.id === fid);
-            document.getElementById(`fq-${fid}`).innerText = current ? current.qty : 0;
-            calcTempTotal();
-        }
-
-        function calcTempTotal() {
-            const nights = (new Date(bookingData.checkout) - new Date(bookingData.checkin)) / (1000*60*60*24) || 1;
-            const rTotal = bookingData.rooms.reduce((s, r) => s + r.price, 0) * nights;
-            const fTotal = bookingData.foods.reduce((s, f) => s + (f.price * f.qty), 0);
-            
-            document.getElementById('footerTotal').innerText = `฿${(rTotal + fTotal).toLocaleString()}`;
-        }
-
-        // LOGIC: Step 3 Final & Submit
-        function calculateFinal() {
-            const nights = (new Date(bookingData.checkout) - new Date(bookingData.checkin)) / (1000*60*60*24);
-            bookingData.totalRoom = bookingData.rooms.reduce((s, r) => s + r.price, 0) * nights;
-            bookingData.totalFood = bookingData.foods.reduce((s, f) => s + (f.price * f.qty), 0);
-            
-            // Deposit Logic
-            const isSpecial = serverData.specialDates.includes(bookingData.checkin);
-            const roomDepositRate = isSpecial ? 1.0 : 0.5;
-            
-            // Reset discount first
-            bookingData.discount = 0;
-            
-            updateSummaryDisplay(isSpecial, roomDepositRate);
-        }
-
-        function applyPromo() {
-            const code = document.getElementById('promoCode').value.toUpperCase().trim();
-            const promo = serverData.promoCodes.find(p => p.code === code);
-            const msg = document.getElementById('promoMsg');
-            
-            if(promo) {
-                if(promo.type === '%') {
-                    bookingData.discount = bookingData.totalRoom * (parseFloat(promo.value)/100);
-                } else {
-                    bookingData.discount = parseFloat(promo.value);
-                }
-                // Cap discount not to exceed room price
-                if(bookingData.discount > bookingData.totalRoom) bookingData.discount = bookingData.totalRoom;
-                
-                msg.innerText = "✅ ใช้โค้ดส่วนลดสำเร็จ";
-                msg.className = "text-xs mb-2 text-emerald-600";
-                
-                // Recalculate Totals
-                const isSpecial = serverData.specialDates.includes(bookingData.checkin);
-                updateSummaryDisplay(isSpecial, isSpecial ? 1.0 : 0.5);
-            } else {
-                msg.innerText = "❌ โค้ดส่วนลดไม่ถูกต้อง";
-                msg.className = "text-xs mb-2 text-red-500";
-                bookingData.discount = 0;
-                updateSummaryDisplay();
-            }
-        }
-
-        function updateSummaryDisplay(isSpecial, roomRate) {
-            // Recalculate
-            const roomAfterDisc = bookingData.totalRoom - bookingData.discount;
-            bookingData.netTotal = roomAfterDisc + bookingData.totalFood;
-            
-            // Deposit: (Room - Disc * Rate) + Food 100%
-            bookingData.deposit = (roomAfterDisc * (roomRate || 0.5)) + bookingData.totalFood;
-
-            // Render
-            document.getElementById('sumRoom').innerText = `฿${bookingData.totalRoom.toLocaleString()}`;
-            document.getElementById('sumFood').innerText = `฿${bookingData.totalFood.toLocaleString()}`;
-            document.getElementById('sumTotal').innerText = `฿${bookingData.netTotal.toLocaleString()}`;
-            
-            if(bookingData.discount > 0) {
-                document.getElementById('discountRow').classList.remove('hidden');
-                document.getElementById('sumDisc').innerText = `-฿${bookingData.discount.toLocaleString()}`;
-            }
-
-            document.getElementById('depositAmount').innerText = `฿${bookingData.deposit.toLocaleString()}`;
-            document.getElementById('depositConditionText').innerText = isSpecial 
-                ? "(วันพิเศษ: มัดจำห้อง 100% + อาหาร 100%)" 
-                : "(มัดจำห้อง 50% + อาหาร 100%)";
-
-            // QR Code
-            document.getElementById('qrImage').src = `https://promptpay.io/0615924262/${bookingData.deposit}.png`;
-        }
-
-        function renderSummary() {
-            // List Items
-            let html = `
-                <div class="flex justify-between"><span>เข้าพัก:</span> <span class="font-bold">${formatDate(bookingData.checkin)}</span></div>
-                <div class="flex justify-between"><span>ออก:</span> <span class="font-bold">${formatDate(bookingData.checkout)}</span></div>
-                <div class="border-t my-2 pt-2 text-xs font-bold text-gray-500">ห้องพัก</div>
-            `;
-            bookingData.rooms.forEach(r => {
-                html += `<div class="flex justify-between text-xs"><span>- ${r.name} (${r.guests} คน)</span></div>`;
-            });
-            if(bookingData.foods.length > 0) {
-                html += `<div class="border-t my-2 pt-2 text-xs font-bold text-gray-500">อาหาร</div>`;
-                bookingData.foods.forEach(f => {
-                    html += `<div class="flex justify-between text-xs"><span>- ${f.name} x${f.qty}</span></div>`;
-                });
-            }
-            document.getElementById('summaryDetails').innerHTML = html;
-        }
-
-        function formatDate(d) {
-            const date = new Date(d);
-            return `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()+543}`;
-        }
-
-        function toggleLoading(show) {
-            document.getElementById('loading').className = show ? "fixed inset-0 bg-black/50 z-[60] flex items-center justify-center" : "hidden";
-        }
-
-        async function submitBooking() {
-            const cName = document.getElementById('cName').value;
-            const cTel = document.getElementById('cTel').value;
-            const file = document.getElementById('slipFile').files[0];
-
-            if(!cName || !cTel || !file) return alert('กรุณากรอกข้อมูลและแนบสลิป');
-
-            toggleLoading(true);
-
-            // Read File
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
-                const payload = {
-                    action: 'submitBooking',
-                    userId: bookingData.user.id,
-                    userName: bookingData.user.name,
-                    custName: cName,
-                    custTel: cTel,
-                    checkin: bookingData.checkin,
-                    checkout: bookingData.checkout,
-                    rooms: JSON.stringify(bookingData.rooms),
-                    foods: JSON.stringify(bookingData.foods),
-                    promoCode: document.getElementById('promoCode').value,
-                    total: bookingData.netTotal,
-                    deposit: bookingData.deposit,
-                    slip: reader.result
-                };
-
-                try {
-                    // Note: Use no-cors or JSONP if CORS issue persists, but Exec Url usually works fine for POST
-                    await fetch(APP_SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    alert('✅ จองสำเร็จ! รอแอดมินตรวจสอบ');
-                    liff.closeWindow();
-                } catch(e) {
-                    alert('เกิดข้อผิดพลาดในการส่งข้อมูล');
-                } finally {
-                    toggleLoading(false);
-                }
-            };
-        }
-    </script>
+    
+    <script src="script.js"></script>
 </body>
 </html>
