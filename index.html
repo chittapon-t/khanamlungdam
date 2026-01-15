@@ -62,7 +62,7 @@
                 </h2>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[10px] font-bold text-gray-400 mb-1 block uppercase">เช็คอิน</label>
+                        <label class="text-[10px] font-bold text-gray-400 mb-1 block uppercase">เช็คอิน (พรุ่งนี้เป็นต้นไป)</label>
                         <input type="date" id="checkin" class="input-field text-sm" onchange="validateDates()">
                     </div>
                     <div>
@@ -105,6 +105,15 @@
                         <label class="text-xs font-bold text-gray-400 mb-1 block">เบอร์โทรศัพท์</label>
                         <input type="tel" id="custTel" class="input-field" placeholder="08X-XXX-XXXX">
                     </div>
+                    <!-- โค้ดส่วนลด -->
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 mb-1 block">โค้ดส่วนลด (ถ้ามี)</label>
+                        <div class="flex space-x-2">
+                            <input type="text" id="promoCode" class="input-field uppercase" placeholder="กรอกโค้ด">
+                            <button onclick="checkPromoCode()" class="bg-gray-800 text-white px-4 rounded-lg text-sm font-bold whitespace-nowrap">ตรวจสอบ</button>
+                        </div>
+                        <p id="promoMsg" class="text-[10px] mt-1 hidden"></p>
+                    </div>
                 </div>
             </div>
 
@@ -125,7 +134,7 @@
                 
                 <label class="flex items-start mt-4 text-[11px] cursor-pointer text-gray-600 leading-tight">
                     <input type="checkbox" id="terms" class="mt-1 mr-2"> 
-                    <span>ฉันยอมรับเงื่อนไขการจอง: เลื่อนวันเข้าพักต้องแจ้งล่วงหน้าอย่างน้อย 7 วัน และกรณีภัยพิบัติเป็นไปตามดุลยพินิจของแอดมิน</span>
+                    <span>ฉันยอมรับเงื่อนไขการจอง: ของขนำลุงดำ แคมป์ปิ้ง ทุกประการ</span>
                 </label>
             </div>
         </div>
@@ -160,9 +169,8 @@
         };
 
         let currentStep = 1;
-        let userData = { lineId: '', lineName: '', rooms: [], foods: [] };
+        let userData = { lineId: '', lineName: '', rooms: [], foods: [], discount: 0, promoCode: '' };
         
-        // ข้อมูลที่พักจริง
         const ROOMS = [
             { id: 'Nampo', name: 'โฮมสเตย์หนำโป', priceRules: [{min: 4, max: 5, p: 1600}, {min: 6, max: 8, p: 2200}], img: 'https://via.placeholder.com/150?text=Nampo' },
             { id: 'River1', name: 'บ้านพักริมน้ำ 1', priceRules: [{min: 1, max: 2, p: 1400}, {min: 3, max: 3, p: 1750}], img: 'https://via.placeholder.com/150?text=River1' },
@@ -174,7 +182,6 @@
             { id: 'Camping', name: 'ลานกางเต็นท์', priceRules: [{min: 1, max: 20, p: 150, perPerson: true}], img: 'https://via.placeholder.com/150?text=Camping' }
         ];
 
-        // ข้อมูลอาหารจริง
         const FOODS = [
             { id: 'F1', name: 'ชุดหมูกระทะลุงดำ', p: 390 },
             { id: 'F2', name: 'ชุดไก่กระทะลุงดำ', p: 390 },
@@ -184,6 +191,13 @@
         ];
 
         async function initLIFF() {
+            // ตั้งค่าวันที่ขั้นต่ำของปฏิทิน (พรุ่งนี้)
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const minDate = tomorrow.toISOString().split('T')[0];
+            document.getElementById('checkin').min = minDate;
+            document.getElementById('checkout').min = minDate;
+
             try {
                 await liff.init({ liffId: CONFIG.LIFF_ID });
                 if (!liff.isLoggedIn()) {
@@ -198,6 +212,8 @@
                 renderFoods();
             } catch (err) {
                 console.error(err);
+                renderRooms(); // แสดงข้อมูลไว้ก่อนแม้ LIFF โหลดไม่สำเร็จ
+                renderFoods();
             }
         }
 
@@ -216,16 +232,28 @@
                             </div>
                             <div class="flex items-center justify-between mt-1">
                                 <span class="text-xs font-bold text-emerald-800">฿${r.priceRules[0].p}${r.id === 'Camping' ? '/คน' : ''}</span>
-                                <div class="flex items-center bg-gray-100 rounded-lg px-2 py-1" onclick="event.stopPropagation()">
-                                    <span class="text-[10px] font-bold mr-2">จำนวนคน</span>
-                                    <input type="number" id="pax-${r.id}" min="${minPax}" max="${maxPax}" value="${minPax}" 
-                                        class="w-8 text-center bg-transparent font-bold text-xs outline-none" onchange="calculateAll()">
+                                <div class="flex items-center space-x-2" onclick="event.stopPropagation()">
+                                    <button onclick="updatePax('${r.id}', -1)" class="w-6 h-6 rounded bg-gray-100 flex items-center justify-center font-bold text-gray-500">-</button>
+                                    <span id="pax-display-${r.id}" class="w-4 text-center text-xs font-bold">${minPax}</span>
+                                    <button onclick="updatePax('${r.id}', 1)" class="w-6 h-6 rounded bg-gray-200 flex items-center justify-center font-bold text-gray-800">+</button>
+                                    <input type="hidden" id="pax-${r.id}" value="${minPax}" data-min="${minPax}" data-max="${maxPax}">
                                 </div>
                             </div>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        function updatePax(id, delta) {
+            const input = document.getElementById(`pax-${id}`);
+            const display = document.getElementById(`pax-display-${id}`);
+            let val = parseInt(input.value) + delta;
+            if (val < parseInt(input.dataset.min)) val = parseInt(input.dataset.min);
+            if (val > parseInt(input.dataset.max)) val = parseInt(input.dataset.max);
+            input.value = val;
+            display.innerText = val;
+            calculateAll();
         }
 
         function renderFoods() {
@@ -269,11 +297,9 @@
             let roomTotal = 0;
             let foodTotal = 0;
             
-            // Rooms Calculation
             userData.rooms.forEach(rid => {
                 const room = ROOMS.find(r => r.id === rid);
                 const pax = parseInt(document.getElementById(`pax-${rid}`).value);
-                
                 if (room.id === 'Camping') {
                     roomTotal += (pax * 150);
                 } else {
@@ -282,23 +308,46 @@
                 }
             });
 
-            // Foods Calculation
             FOODS.forEach(f => {
                 const qty = parseInt(document.getElementById(`qty-${f.id}`).innerText);
                 foodTotal += (qty * f.p);
             });
 
-            const total = roomTotal + foodTotal;
-            // มัดจำ 50% เฉพาะราคาที่พัก + ค่าอาหารเต็มจำนวน
+            let subtotal = roomTotal + foodTotal;
+            let total = subtotal - userData.discount;
+            if (total < 0) total = 0;
+
             const deposit = Math.ceil((roomTotal * 0.5) + foodTotal);
 
             document.getElementById('totalPrice').innerText = `฿${total.toLocaleString()}`;
             document.getElementById('depositDisplay').innerText = `฿${deposit.toLocaleString()}`;
-            
-            // Dynamic PromptPay QR
             document.getElementById('qrCode').src = `https://promptpay.io/0615924262/${deposit}`;
             
-            return { total, deposit, roomTotal, foodTotal };
+            return { total, deposit, roomTotal, foodTotal, subtotal };
+        }
+
+        function checkPromoCode() {
+            const code = document.getElementById('promoCode').value.toUpperCase();
+            const msg = document.getElementById('promoMsg');
+            msg.classList.remove('hidden', 'text-red-500', 'text-green-600');
+            
+            if (code === 'LUNGDAM100') {
+                userData.discount = 100;
+                userData.promoCode = code;
+                msg.innerText = '✓ โค้ดส่วนลด 100 บาท ถูกนำมาใช้งานแล้ว';
+                msg.classList.add('text-green-600');
+            } else if (code === '') {
+                userData.discount = 0;
+                userData.promoCode = '';
+                msg.classList.add('hidden');
+            } else {
+                userData.discount = 0;
+                userData.promoCode = '';
+                msg.innerText = '× โค้ดไม่ถูกต้องหรือหมดอายุ';
+                msg.classList.add('text-red-500');
+            }
+            calculateAll();
+            updateSummary();
         }
 
         function changeStep(n) {
@@ -313,9 +362,7 @@
 
             document.getElementById(`step${currentStep}`).classList.add('hidden');
             document.getElementById(`step-${currentStep}-dot`).classList.replace('step-active', 'step-inactive');
-            
             currentStep += n;
-            
             document.getElementById(`step${currentStep}`).classList.remove('hidden');
             document.getElementById(`step-${currentStep}-dot`).classList.replace('step-inactive', 'step-active');
 
@@ -350,6 +397,7 @@
                 <div class="mt-4 pt-4 border-t border-dashed">
                     <div class="flex justify-between text-gray-500"><span>รวมค่าที่พัก:</span> <span>฿${calc.roomTotal.toLocaleString()}</span></div>
                     <div class="flex justify-between text-gray-500"><span>รวมค่าอาหาร:</span> <span>฿${calc.foodTotal.toLocaleString()}</span></div>
+                    ${userData.discount > 0 ? `<div class="flex justify-between text-red-500"><span>ส่วนลด (${userData.promoCode}):</span> <span>-฿${userData.discount.toLocaleString()}</span></div>` : ''}
                     <div class="flex justify-between text-lg font-bold text-emerald-900 mt-2"><span>ยอดรวมทั้งสิ้น:</span> <span>฿${calc.total.toLocaleString()}</span></div>
                 </div>
             `;
@@ -372,9 +420,7 @@
 
             const calc = calculateAll();
             const selectedFoods = FOODS.map(f => ({
-                id: f.id,
-                name: f.name,
-                qty: parseInt(document.getElementById(`qty-${f.id}`).innerText)
+                id: f.id, name: f.name, qty: parseInt(document.getElementById(`qty-${f.id}`).innerText)
             })).filter(f => f.qty > 0);
 
             const payload = {
@@ -393,6 +439,7 @@
                 totalPrice: calc.total,
                 deposit: calc.deposit,
                 balance: calc.total - calc.deposit,
+                promoCode: userData.promoCode,
                 slipBase64: slipBase64
             };
 
@@ -400,13 +447,13 @@
                 const res = await fetch(CONFIG.API, { method: 'POST', body: JSON.stringify(payload) });
                 const result = await res.json();
                 if (result.success) {
-                    alert('ส่งข้อมูลการจองสำเร็จ! กรุณารอแอดมินตรวจสอบและยืนยันผ่านทาง LINE');
+                    alert('ส่งข้อมูลการจองสำเร็จ! กรุณารอแอดมินตรวจสอบ');
                     liff.closeWindow();
                 } else {
                     alert('เกิดข้อผิดพลาด: ' + result.message);
                 }
             } catch (err) {
-                alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                alert('ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
             }
             document.getElementById('loader').classList.add('hidden');
         }
@@ -420,13 +467,6 @@
                 if (d2 <= d1) {
                     alert('วันเช็คเอาท์ต้องเป็นวันหลังจากเช็คอินอย่างน้อย 1 วัน');
                     document.getElementById('checkout').value = '';
-                    return;
-                }
-                const today = new Date();
-                today.setHours(0,0,0,0);
-                if (d1 < today) {
-                    alert('ไม่สามารถจองวันที่ผ่านมาแล้วได้ หากต้องการจองด่วนกรุณาติดต่อแอดมิน');
-                    document.getElementById('checkin').value = '';
                 }
             }
         }
