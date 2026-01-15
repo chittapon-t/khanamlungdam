@@ -1,41 +1,42 @@
 <!DOCTYPE html>
-<html lang="th">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Admin - ขนำลุงดำ</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Kanit', sans-serif; }</style>
+<meta charset="utf-8">
+<title>Admin - ขนำลุงดำ</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen pb-10">
-    <nav class="bg-emerald-800 text-white p-4 shadow-md flex justify-between items-center">
-        <h1 class="font-bold">จัดการการจอง ขนำลุงดำ</h1>
-        <button onclick="loadAll()" class="bg-white/20 px-4 py-1 rounded text-sm">รีเฟรช</button>
-    </nav>
+<body class="p-4 bg-emerald-50">
+<h1 class="text-2xl font-bold mb-4">📊 Dashboard การจอง</h1>
+<table class="w-full bg-white shadow rounded">
+<thead class="bg-emerald-700 text-white">
+<tr><th>เลขที่</th><th>ชื่อ</th><th>วันเข้าพัก</th><th>สถานะ</th><th>จัดการ</th></tr>
+</thead>
+<tbody id="data"></tbody>
+</table>
 
-    <main class="max-w-6xl mx-auto p-6 space-y-8">
-        <!-- Room Status Section -->
-        <section class="bg-white rounded-xl shadow-sm border p-4">
-            <h2 class="font-bold text-gray-700 mb-4 border-b pb-2">สถานะห้องพัก (เปิด/ปิดขาย)</h2>
-            <div id="roomManageTable" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-        </section>
+<script>
+const API="https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec";
 
-        <!-- Booking List Section -->
-        <section class="bg-white rounded-xl shadow-sm border overflow-hidden">
-            <h2 class="font-bold text-gray-700 p-4 border-b bg-gray-50">รายการจองล่าสุด</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] font-bold">
-                        <tr>
-                            <th class="p-4">ID</th><th class="p-4">ลูกค้า</th><th class="p-4">ห้อง/วันที่</th><th class="p-4">ยอดชำระ</th><th class="p-4">สถานะ</th><th class="p-4">จัดการ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bookingTableBody" class="divide-y divide-gray-100"></tbody>
-                </table>
-            </div>
-        </section>
-    </main>
+fetch(API,{method:"post",body:JSON.stringify({action:"getBookings"})})
+.then(r=>r.json()).then(d=>{
+  let html="";
+  d.forEach(r=>{
+    html+=`<tr class="border">
+      <td>${r[0]}</td>
+      <td>${r[4]}</td>
+      <td>${r[16]}</td>
+      <td>${r[19]}</td>
+      <td>
+        <button onclick="confirm('${r[0]}')" class="bg-emerald-600 text-white px-2 py-1">ยืนยัน</button>
+      </td></tr>`;
+  });
+  document.getElementById("data").innerHTML=html;
+});
 
-    <script src="admin.js"></script>
+function confirm(id){
+ fetch(API,{method:"post",body:JSON.stringify({action:"updateStatus",id:id,status:"ยืนยันแล้ว"})})
+ .then(()=>location.reload());
+}
+</script>
 </body>
 </html>
