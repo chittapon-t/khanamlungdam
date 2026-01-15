@@ -105,7 +105,6 @@
                         <label class="text-xs font-bold text-gray-400 mb-1 block">เบอร์โทรศัพท์</label>
                         <input type="tel" id="custTel" class="input-field" placeholder="08X-XXX-XXXX">
                     </div>
-                    <!-- โค้ดส่วนลด -->
                     <div>
                         <label class="text-xs font-bold text-gray-400 mb-1 block">โค้ดส่วนลด (ถ้ามี)</label>
                         <div class="flex space-x-2">
@@ -134,7 +133,7 @@
                 
                 <label class="flex items-start mt-4 text-[11px] cursor-pointer text-gray-600 leading-tight">
                     <input type="checkbox" id="terms" class="mt-1 mr-2"> 
-                    <span>ฉันยอมรับเงื่อนไขการจอง: ของขนำลุงดำ แคมป์ปิ้ง ทุกประการ</span>
+                    <span>ฉันยอมรับเงื่อนไขการจอง: เลื่อนวันเข้าพักต้องแจ้งล่วงหน้าอย่างน้อย 7 วัน และกรณีภัยพิบัติเป็นไปตามดุลยพินิจของแอดมิน</span>
                 </label>
             </div>
         </div>
@@ -190,8 +189,14 @@
             { id: 'F5', name: 'เซ็ตอาหารพื้นบ้าน', p: 390 }
         ];
 
+        // ฟังก์ชันแปลงวันที่ให้เป็นรูปแบบภาษาไทย
+        function formatThaiDate(dateString) {
+            if (!dateString) return '';
+            const options = { day: 'numeric', month: 'long', year: 'numeric' };
+            return new Intl.DateTimeFormat('th-TH', options).format(new Date(dateString));
+        }
+
         async function initLIFF() {
-            // ตั้งค่าวันที่ขั้นต่ำของปฏิทิน (พรุ่งนี้)
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             const minDate = tomorrow.toISOString().split('T')[0];
@@ -212,7 +217,7 @@
                 renderFoods();
             } catch (err) {
                 console.error(err);
-                renderRooms(); // แสดงข้อมูลไว้ก่อนแม้ LIFF โหลดไม่สำเร็จ
+                renderRooms();
                 renderFoods();
             }
         }
@@ -390,10 +395,12 @@
                 return q > 0 ? `${f.name} x${q}` : null;
             }).filter(x => x).join(', ');
 
+            // แสดงผลวันที่ในรูปแบบไทย
             let html = `
-                <div class="flex justify-between"><span>วันที่พัก:</span> <span class="font-bold">${checkin} - ${checkout}</span></div>
-                <div class="flex justify-between"><span>ห้องพัก:</span> <span class="font-bold text-right">${roomNames}</span></div>
-                ${foodSummary ? `<div class="flex justify-between"><span>อาหาร:</span> <span class="font-bold text-right">${foodSummary}</span></div>` : ''}
+                <div class="flex justify-between items-start"><span class="w-1/3">เช็คอิน:</span> <span class="font-bold text-right">${formatThaiDate(checkin)}</span></div>
+                <div class="flex justify-between items-start"><span class="w-1/3">เช็คเอาท์:</span> <span class="font-bold text-right">${formatThaiDate(checkout)}</span></div>
+                <div class="flex justify-between items-start"><span>ห้องพัก:</span> <span class="font-bold text-right">${roomNames}</span></div>
+                ${foodSummary ? `<div class="flex justify-between items-start"><span>อาหาร:</span> <span class="font-bold text-right">${foodSummary}</span></div>` : ''}
                 <div class="mt-4 pt-4 border-t border-dashed">
                     <div class="flex justify-between text-gray-500"><span>รวมค่าที่พัก:</span> <span>฿${calc.roomTotal.toLocaleString()}</span></div>
                     <div class="flex justify-between text-gray-500"><span>รวมค่าอาหาร:</span> <span>฿${calc.foodTotal.toLocaleString()}</span></div>
@@ -423,14 +430,15 @@
                 id: f.id, name: f.name, qty: parseInt(document.getElementById(`qty-${f.id}`).innerText)
             })).filter(f => f.qty > 0);
 
+            // ส่งข้อมูลวันที่ในรูปแบบไทยไปยัง Google Sheets ด้วย
             const payload = {
                 action: 'submitBooking',
                 lineId: userData.lineId,
                 lineName: userData.lineName,
                 custName: document.getElementById('custName').value,
                 custTel: document.getElementById('custTel').value,
-                checkin: document.getElementById('checkin').value,
-                checkout: document.getElementById('checkout').value,
+                checkin: formatThaiDate(document.getElementById('checkin').value),
+                checkout: formatThaiDate(document.getElementById('checkout').value),
                 roomIds: userData.rooms.join(','),
                 roomNames: userData.rooms.map(id => ROOMS.find(r => r.id === id).name).join(', '),
                 pax: userData.rooms.map(id => document.getElementById(`pax-${id}`).value).join(','),
