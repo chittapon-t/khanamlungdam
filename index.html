@@ -1,132 +1,168 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="utf-8">
-<title>ขนำลุงดำ แคมป์ปิ้ง</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
-<style>
-body{
- font-family:'Kanit',sans-serif;
- background:linear-gradient(180deg,#052e16,#0f3d2e,#fefce8);
- min-height:100vh;
- color:#064e3b;
-}
-.glass{
- background:rgba(255,255,255,.85);
- backdrop-filter:blur(6px);
- border-radius:1rem;
- box-shadow:0 20px 40px rgba(0,0,0,.25);
- border:1px solid rgba(255,255,255,.4)
-}
-.btn-main{
- background:linear-gradient(135deg,#064e3b,#14532d);
- color:#fff;
- border-radius:1rem;
- padding:.75rem 1rem;
- box-shadow:0 10px 25px rgba(0,0,0,.3)
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จองที่พัก - ขนำลุงดำ แคมป์ปิ้ง</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Kanit', sans-serif; background-color: #fcfaf7; }
+        .camping-green { background-color: #1b4332; }
+        .camping-brown { background-color: #6d4c41; }
+        .card-selected { border: 2px solid #1b4332; background-color: #f0fdf4; }
+    </style>
 </head>
-<body class="p-4 max-w-md mx-auto">
+<body class="pb-24">
+    <div id="loading" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-4 border-emerald-800 border-t-transparent rounded-full animate-spin"></div>
+        <p class="mt-4 text-emerald-800 font-bold">กำลังเตรียมเต็นท์ให้คุณ...</p>
+    </div>
 
-<h1 class="text-2xl font-bold text-amber-100 mb-4 drop-shadow-lg">🌿 ขนำลุงดำ แคมป์ปิ้ง</h1>
-<div id="profile" class="text-sm text-amber-100 mb-3"></div>
+    <!-- Header -->
+    <header class="camping-green text-white p-6 rounded-b-3xl shadow-lg">
+        <h1 class="text-2xl font-bold">ขนำลุงดำ แคมป์ปิ้ง</h1>
+        <p class="text-emerald-100 text-sm">สัมผัสธรรมชาติ ริมน้ำขนำโป</p>
+        <div id="userProfile" class="mt-4 flex items-center space-x-3 bg-white/10 p-2 rounded-full w-fit">
+            <img id="userImg" class="w-8 h-8 rounded-full" src="" alt="">
+            <span id="userName" class="text-sm pr-2">กำลังโหลดข้อมูล...</span>
+        </div>
+    </header>
 
-<div class="glass p-4 mb-4">
-<label class="text-xs">วันเข้าพัก</label>
-<input type="date" id="checkin" class="w-full border rounded p-2">
-<label class="text-xs mt-2 block">วันออก</label>
-<input type="date" id="checkout" class="w-full border rounded p-2">
-</div>
+    <main class="p-4 max-w-md mx-auto space-y-6">
+        <!-- Date Selection -->
+        <section class="bg-white p-5 rounded-2xl shadow-sm border border-emerald-50">
+            <h2 class="font-bold text-emerald-900 mb-4 flex items-center">
+                <span class="bg-emerald-100 p-1 rounded mr-2">📅</span> เลือกวันเข้าพัก
+            </h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">วันเช็คอิน</label>
+                    <input type="date" id="checkin" class="w-full border rounded-xl p-3 text-sm focus:ring-2 ring-emerald-500 outline-none" onchange="calculatePrice()">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">วันเช็คเอาท์</label>
+                    <input type="date" id="checkout" class="w-full border rounded-xl p-3 text-sm focus:ring-2 ring-emerald-500 outline-none" onchange="calculatePrice()">
+                </div>
+            </div>
+        </section>
 
-<div class="glass p-4 mb-4">
-<h2 class="font-bold mb-2">🏕️ ห้องพัก</h2>
-<div id="rooms"></div>
-</div>
+        <!-- Room Selection -->
+        <section>
+            <h2 class="font-bold text-emerald-900 mb-3 ml-2">เลือกที่พัก</h2>
+            <div id="roomContainer" class="grid gap-3">
+                <!-- Example Room Item -->
+                <div class="bg-white p-4 rounded-2xl border-2 border-transparent shadow-sm flex justify-between items-center" onclick="toggleRoom('h1', 1600, 'โฮมสเตย์หนำโป', this)">
+                    <div>
+                        <h3 class="font-bold">โฮมสเตย์หนำโป</h3>
+                        <p class="text-xs text-gray-500">สำหรับ 4-8 คน</p>
+                        <p class="text-emerald-700 font-bold mt-1">เริ่มต้น ฿1,600</p>
+                    </div>
+                    <div class="text-emerald-200">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                    </div>
+                </div>
+                <!-- ... other rooms ... -->
+            </div>
+        </section>
 
-<div class="glass p-4 mb-4">
-<h2 class="font-bold mb-2">🍖 อาหาร</h2>
-<div id="foods"></div>
-</div>
+        <!-- Payment Section -->
+        <section id="paymentSection" class="bg-white p-5 rounded-2xl shadow-sm space-y-4">
+            <h2 class="font-bold text-emerald-900">ชำระเงินมัดจำ</h2>
+            <div class="bg-emerald-50 p-4 rounded-xl text-center border-2 border-dashed border-emerald-200">
+                <p class="text-xs text-gray-600 mb-1">ยอดโอนมัดจำ (50% เฉพาะค่าห้อง)</p>
+                <p id="depositDisplay" class="text-3xl font-bold text-red-600">฿0</p>
+                <div class="mt-4 bg-white p-2 inline-block rounded-lg shadow-inner">
+                    <img id="qrCode" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=0615924262" class="w-32 h-32" alt="PromptPay">
+                </div>
+                <p class="mt-2 text-xs font-bold">อลงกต ทวีผ่อง (061-592-4262)</p>
+            </div>
+            
+            <div class="space-y-2">
+                <label class="text-sm font-bold">อัปโหลดสลิป</label>
+                <input type="file" id="slipInput" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700">
+            </div>
 
-<div class="glass p-4 mb-4">
-<label class="text-xs">ชื่อผู้จอง</label>
-<input id="custName" class="w-full border rounded p-2">
-<label class="text-xs mt-2 block">เบอร์โทร</label>
-<input id="custTel" class="w-full border rounded p-2">
-</div>
+            <div class="flex items-center space-x-2 mt-4">
+                <input type="checkbox" id="terms" class="w-4 h-4 rounded text-emerald-600">
+                <label for="terms" class="text-xs text-gray-500">ฉันยอมรับเงื่อนไขการจองและนโยบายความเป็นส่วนตัว</label>
+            </div>
+        </section>
+    </main>
 
-<div class="glass p-4 mb-4 text-center">
-<p>ราคารวม</p>
-<p id="totalPrice" class="text-3xl font-bold text-emerald-700">0</p>
-<p class="text-red-600 text-lg">มัดจำ: <span id="deposit">0</span> บาท</p>
-<img id="qr" class="mx-auto my-3 w-48 rounded-xl shadow">
-</div>
+    <!-- Footer Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] flex justify-between items-center max-w-md mx-auto">
+        <div>
+            <p class="text-[10px] text-gray-400 uppercase font-bold">ยอดรวมทั้งหมด</p>
+            <p id="totalDisplay" class="text-xl font-bold text-emerald-800">฿0</p>
+        </div>
+        <button onclick="handleBooking()" class="camping-green text-white px-8 py-3 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform">
+            ยืนยันการจอง
+        </button>
+    </div>
 
-<div class="glass p-4 mb-4">
-<label class="text-xs">แนบสลิป</label>
-<input type="file" id="slip">
-</div>
+    <script>
+        const LIFF_ID = '2008863563-tuai5kaC';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec';
 
-<button onclick="submitBooking()" class="btn-main w-full text-lg font-bold">ยืนยันการจอง</button>
+        let state = {
+            lineId: '',
+            lineName: '',
+            selectedRooms: [],
+            checkIn: '',
+            checkOut: '',
+            isSpecialDate: false
+        };
 
-<script>
-const LIFF_ID="2008863563-tuai5kaC";
-const BACKEND_URL="https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec";
-let USER_ID="",USER_NAME="";
-const ROOMS={
- HS1:{n:"โฮมสเตย์หนำโป",p:[[4,5,1600],[6,8,2200]]},
- RN1:{n:"บ้านพักริมน้ำ1",p:[[1,2,1400],[3,3,1750]]},
- RN2:{n:"บ้านพักริมน้ำ2",p:[[1,2,1400],[3,3,1750]]},
- TJ1:{n:"เต็นท์กระโจม1",p:[[1,2,1200],[3,4,1550]]},
- TJ2:{n:"เต็นท์กระโจม2",p:[[1,2,1200],[3,4,1550]]},
- K1:{n:"เต็นท์สนามK1",p:[[1,2,700]]},
- K2:{n:"เต็นท์สนามK2",p:[[1,2,700]]},
- TENT:{n:"ลานกางเต็นท์",p:[[1,20,150]]}
-};
-const FOODS={หมูกระทะ:390,ไก่กระทะ:390,ชาบูหมู:390,ชาบูไก่:390,พื้นบ้าน:390};
-let sel={},fq={},total=0;
+        async function initLiff() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                } else {
+                    const profile = await liff.getProfile();
+                    state.lineId = profile.userId;
+                    state.lineName = profile.displayName;
+                    document.getElementById('userName').innerText = profile.displayName;
+                    document.getElementById('userImg').src = profile.pictureUrl;
+                    document.getElementById('loading').style.display = 'none';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
 
-liff.init({liffId:LIFF_ID}).then(()=>liff.getProfile().then(p=>{
- USER_ID=p.userId;USER_NAME=p.displayName;
- profile.innerText="สวัสดี "+USER_NAME;
-}));
+        function toggleRoom(id, price, name, el) {
+            const index = state.selectedRooms.findIndex(r => r.id === id);
+            if (index > -1) {
+                state.selectedRooms.splice(index, 1);
+                el.classList.remove('card-selected');
+            } else {
+                state.selectedRooms.push({ id, price, name });
+                el.classList.add('card-selected');
+            }
+            calculatePrice();
+        }
 
-Object.keys(ROOMS).forEach(k=>{
- rooms.innerHTML+=`
- <div class="mt-2">
- <label>${ROOMS[k].n}</label>
- <input type="number" min="0" class="w-full border rounded p-1"
- onchange="this.value>0?sel['${k}']=+this.value:delete sel['${k}'];calc()">
- </div>`;
-});
+        function calculatePrice() {
+            const roomTotal = state.selectedRooms.reduce((sum, r) => sum + r.price, 0);
+            const deposit = state.isSpecialDate ? roomTotal : (roomTotal * 0.5);
+            
+            document.getElementById('totalDisplay').innerText = `฿${roomTotal.toLocaleString()}`;
+            document.getElementById('depositDisplay').innerText = `฿${deposit.toLocaleString()}`;
+        }
 
-Object.keys(FOODS).forEach(k=>{
- foods.innerHTML+=`
- <div class="flex justify-between mt-2">
- <span>${k}</span>
- <input type="number" min="0" class="border w-16" onchange="fq['${k}']=this.value;calc()">
- </div>`;
-});
+        async function handleBooking() {
+            if (!document.getElementById('terms').checked) {
+                return alert('กรุณายอมรับเงื่อนไขการจอง');
+            }
+            
+            // Logic for file conversion to base64 and posting to SCRIPT_URL
+            // ... API call to submitBooking ...
+        }
 
-function calc(){
- total=0;
- for(let r in sel){
-  let p=sel[r],rule=ROOMS[r].p.find(x=>p>=x[0]&&p<=x[1]);
-  total+= r=="TENT"?p*150:(rule?rule[2]:0);
- }
- for(let f in fq) total+=FOODS[f]*fq[f];
- totalPrice.innerText=total;
- deposit.innerText=Math.ceil(total/2);
- qr.src="https://promptpay.io/0615924262/"+Math.ceil(total/2);
-}
-
-function submitBooking(){
- alert("ส่งการจองเรียบร้อย รอแอดมินตรวจสอบ");
-}
-</script>
+        window.onload = initLiff;
+    </script>
 </body>
 </html>
