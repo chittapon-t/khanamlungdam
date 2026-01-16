@@ -131,7 +131,7 @@
                     <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-lg">QR พร้อมเพย์</span>
                 </div>
                 <div class="bg-white p-3 inline-block rounded-2xl border shadow-inner">
-                    <img id="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=0615924262" class="w-44 h-44 mx-auto">
+                    <img id="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=0615924262" class="w-44 h-44 mx-auto" alt="PromptPay QR">
                 </div>
                 <p id="pp-id" class="font-bold text-xl text-emerald-900 tracking-tighter">061-592-4262</p>
                 <p id="pp-name" class="text-[10px] text-gray-400 italic">ชื่อบัญชี: นายอลงกต ทวีผ่อง</p>
@@ -179,6 +179,7 @@
     </footer>
 
     <script>
+        // ใส่ URL Web App จาก Google Apps Script ที่ Deploy แล้วที่นี่
         const API = 'https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec';
         
         const REAL_ROOMS = [
@@ -206,7 +207,7 @@
             selectedRoom: null, 
             selectedFoods: [],
             promo: null,
-            user: { lineId: 'USER_ID', lineName: 'User Name' }
+            user: { lineId: 'WEB_USER', lineName: 'Web Guest' }
         };
 
         window.onload = async () => {
@@ -265,7 +266,7 @@
                         document.getElementById('qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${data.config.PromptPayID}`;
                     }
                 }
-            } catch (e) { console.warn("Fetch initial failed"); }
+            } catch (e) { console.warn("Fetch initial data failed, using defaults."); }
         }
 
         function renderRooms() {
@@ -372,6 +373,7 @@
             const net = roomNet + foodPrice;
             const depositRate = state.master?.config?.DepositRate || 0.5;
             
+            // สูตรมัดจำ: (ที่พัก * depositRate) + อาหารทั้งหมด
             const deposit = (roomNet * depositRate) + foodPrice;
 
             document.getElementById('sum-room-total').innerText = `฿${roomPrice.toLocaleString()}`;
@@ -502,20 +504,23 @@
                     checkout: document.getElementById('checkout').value, 
                     slipBase64: reader.result 
                 };
+                
                 try {
-                    const res = await fetch(API, { 
+                    // ใช้ mode: 'no-cors' สำหรับ Apps Script เพราะบางครั้งอาจมีปัญหาเรื่อง Redirect
+                    await fetch(API, { 
                         method: 'POST', 
                         body: JSON.stringify(bookingData),
-                        mode: 'no-cors' // Use no-cors if Script is not returning headers
+                        mode: 'no-cors'
                     });
                     
-                    // Since no-cors cannot read response, we assume success or handle via timeout/redirect
+                    // แสดงสถานะสำเร็จ
                     document.getElementById('step-3').classList.add('hidden');
                     document.getElementById('step-success').classList.remove('hidden');
                     document.getElementById('footer-nav').classList.add('hidden');
                     
                 } catch (e) { 
-                    // Fallback to success UI anyway because of CORS limitations with Apps Script
+                    console.error("Submit error:", e);
+                    // แม้จะ error จาก CORS แต่ข้อมูลมักจะเข้า Google Sheets แล้ว
                     document.getElementById('step-3').classList.add('hidden');
                     document.getElementById('step-success').classList.remove('hidden');
                     document.getElementById('footer-nav').classList.add('hidden');
