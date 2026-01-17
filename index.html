@@ -22,16 +22,16 @@
         <div class="flex justify-between items-center">
             <div>
                 <h1 class="text-2xl font-bold italic">ขนำลุงดำ แคมป์ปิ้ง</h1>
-                <p class="text-emerald-100 text-[10px] opacity-80 uppercase tracking-wider">Khanamlungdam Camping & Homestay</p>
+                <p class="text-emerald-100 text-[10px] opacity-80 uppercase tracking-wider">Riverside Camping & Homestay</p>
             </div>
             <div id="user-status" class="bg-emerald-700/50 p-2 rounded-full text-[10px]">Guest</div>
         </div>
     </header>
 
     <nav class="flex justify-around p-4 border-b bg-white z-40 shadow-sm sticky top-[88px]">
-        <div id="s1" class="step-active pb-1 text-sm">วันที่ & ห้องพัก</div>
-        <div id="s2" class="text-gray-400 pb-1 text-sm">เลือกอาหาร</div>
-        <div id="s3" class="text-gray-400 pb-1 text-sm">สรุปการจอง</div>
+        <div id="s1" class="step-active pb-1 text-sm text-center w-full">1. เลือกห้อง</div>
+        <div id="s2" class="text-gray-400 pb-1 text-sm text-center w-full">2. อาหาร</div>
+        <div id="s3" class="text-gray-400 pb-1 text-sm text-center w-full">3. จ่ายเงิน</div>
     </nav>
 
     <main class="p-5">
@@ -41,7 +41,7 @@
                 <label class="block text-[10px] font-bold text-emerald-800 mb-2 uppercase tracking-wide">📅 เลือกวันที่เข้าพัก</label>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <span class="text-[10px] text-emerald-600 ml-1">เช็คอิน</span>
+                        <span class="text-[10px] text-emerald-600 ml-1">เช็คอิน (พรุ่งนี้)</span>
                         <input type="date" id="checkin" onchange="handleDateChange('checkin')" class="w-full p-2.5 rounded-xl border ring-1 ring-emerald-200 text-sm bg-white focus:outline-none">
                     </div>
                     <div>
@@ -70,32 +70,39 @@
 
         <!-- Step 3: Summary & Payment -->
         <div id="step-3" class="hidden space-y-6 animate-fadeIn">
+            <!-- Back Button for Step 3 -->
+            <button onclick="moveStep(-1)" class="flex items-center gap-2 text-gray-500 text-sm font-bold active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                กลับไปแก้ไขการจอง
+            </button>
+
             <div class="bg-white p-5 rounded-3xl border border-gray-100 shadow-lg">
                 <h3 class="font-bold text-gray-800 text-lg border-b pb-2 mb-4">สรุปการจอง</h3>
                 
-                <!-- New: Display Dates in Thai -->
-                <div class="bg-slate-50 p-3 rounded-xl mb-4 space-y-1">
+                <div class="bg-slate-50 p-3 rounded-xl mb-4 space-y-1 border border-slate-100">
                     <div class="flex justify-between text-[11px]">
                         <span class="text-gray-500">เช็คอิน:</span>
-                        <span id="display-checkin" class="font-bold text-gray-700">-</span>
+                        <span id="display-checkin" class="font-bold text-emerald-800 text-xs">-</span>
                     </div>
                     <div class="flex justify-between text-[11px]">
                         <span class="text-gray-500">เช็คเอาท์:</span>
-                        <span id="display-checkout" class="font-bold text-gray-700">-</span>
+                        <span id="display-checkout" class="font-bold text-emerald-800 text-xs">-</span>
                     </div>
                 </div>
 
                 <div id="summary-items" class="space-y-3 text-sm text-gray-600 mb-4"></div>
 
                 <div class="space-y-2 border-t pt-3">
-                    <div class="flex justify-between text-xs"><span>ค่าที่พักรวม</span><span id="sum-room">฿0</span></div>
+                    <div class="flex justify-between text-xs"><span>ค่าที่พักรวม</span><span id="sum-room" class="font-bold">฿0</span></div>
                     <div class="flex justify-between text-xs text-red-500 font-bold hidden" id="sum-discount-row"><span>ส่วนลด</span><span id="sum-discount">-฿0</span></div>
-                    <div class="flex justify-between text-xs"><span>ค่าอาหาร</span><span id="sum-food">฿0</span></div>
+                    <div class="flex justify-between text-xs"><span>ค่าอาหาร</span><span id="sum-food" class="font-bold">฿0</span></div>
                     <div class="flex justify-between font-bold text-lg text-emerald-800 pt-2 border-t mt-2"><span>ยอดสุทธิทั้งหมด</span><span id="sum-net">฿0</span></div>
                 </div>
 
                 <div class="pt-4 flex gap-2">
-                    <input type="text" id="promo-input" placeholder="โค้ดส่วนลด" class="flex-1 p-2 border rounded-xl text-center uppercase text-sm focus:outline-none">
+                    <input type="text" id="promo-input" placeholder="โค้ดส่วนลด" class="flex-1 p-2 border rounded-xl text-center uppercase text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500">
                     <button onclick="applyPromo()" class="bg-gray-800 text-white px-4 rounded-xl text-xs active:scale-95">ใช้โค้ด</button>
                 </div>
                 <p id="promo-msg" class="text-[10px] mt-1 text-center h-4"></p>
@@ -109,6 +116,7 @@
                 </div>
             </div>
 
+            <!-- QR Code Section -->
             <div class="text-center p-6 bg-white border rounded-3xl shadow-sm space-y-4">
                 <p class="text-[10px] text-gray-400 font-bold uppercase">สแกนจ่ายผ่าน QR Code</p>
                 <div class="bg-white p-3 inline-block rounded-xl border-2 border-emerald-100 shadow-inner">
@@ -124,6 +132,7 @@
                 </div>
             </div>
 
+            <!-- Customer Details -->
             <div class="space-y-3">
                 <input type="text" id="custName" placeholder="ชื่อผู้จอง" class="w-full p-4 rounded-2xl border bg-gray-50 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" oninput="validateForm()">
                 <input type="tel" id="custTel" placeholder="เบอร์โทรศัพท์" class="w-full p-4 rounded-2xl border bg-gray-50 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" oninput="validateForm()">
@@ -186,6 +195,14 @@
             calc: { total: 0, net: 0, deposit: 0 }
         };
 
+        // Date Formatter with Thai Locale and Timezone consideration
+        function formatThaiDate(dateStr) {
+            if(!dateStr) return "-";
+            const date = new Date(dateStr);
+            const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+            return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
+        }
+
         async function init() {
             setupDates();
             renderRooms();
@@ -198,16 +215,10 @@
             } catch(e) { console.error("Init failed"); }
         }
 
-        // Helper to format date into Thai Long Date
-        function formatThaiDate(dateStr) {
-            if(!dateStr) return "-";
-            const date = new Date(dateStr);
-            const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-            return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
-        }
-
         function setupDates() {
-            const tomorrow = new Date();
+            // Get today in Bangkok Timezone
+            const now = new Date();
+            const tomorrow = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Bangkok"}));
             tomorrow.setDate(tomorrow.getDate() + 1);
             const tomorrowStr = tomorrow.toISOString().split('T')[0];
             
@@ -243,7 +254,7 @@
             state.selection.checkout = co.value;
             document.getElementById('stay-duration').innerText = `จำนวน ${state.selection.days} คืน`;
             
-            // Update UI display dates
+            // Update UI display dates (Thai Format)
             document.getElementById('display-checkin').innerText = formatThaiDate(ci.value);
             document.getElementById('display-checkout').innerText = formatThaiDate(co.value);
             
@@ -271,9 +282,9 @@
                         <div class="mt-4 pt-3 border-t border-emerald-100 flex justify-between items-center" onclick="event.stopPropagation()">
                             <span class="text-xs font-bold text-gray-600">👤 จำนวนผู้เข้าพัก</span>
                             <div class="flex items-center gap-3">
-                                <button onclick="updateRoomPax('${r.id}', -1)" class="w-8 h-8 rounded-lg bg-gray-100 font-bold">-</button>
+                                <button onclick="updateRoomPax('${r.id}', -1)" class="w-8 h-8 rounded-lg bg-gray-100 font-bold active:bg-gray-200 transition-colors">-</button>
                                 <span class="text-sm font-bold">${sel.pax}</span>
-                                <button onclick="updateRoomPax('${r.id}', 1)" class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 font-bold">+</button>
+                                <button onclick="updateRoomPax('${r.id}', 1)" class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 font-bold active:bg-emerald-200 transition-colors">+</button>
                             </div>
                         </div>` : ''}
                     </div>`;
@@ -373,7 +384,6 @@
                 document.getElementById('sum-discount').innerText = `-฿${discount.toLocaleString()}`;
             } else dRow.classList.add('hidden');
 
-            // Generate Dynamic QR Code
             const ppId = state.config.settings['PromptPayID'] || '0615924262';
             document.getElementById('qr-img').src = `https://promptpay.io/${ppId}/${deposit}.png`;
             
@@ -398,15 +408,21 @@
             if(delta === 1 && state.step === 1 && state.selection.rooms.length === 0) {
                 return Swal.fire({ icon: 'warning', title: 'กรุณาเลือกที่พัก', confirmButtonColor: '#065f46' });
             }
+            
             document.getElementById(`step-${state.step}`).classList.add('hidden');
             document.getElementById(`s${state.step}`).classList.remove('step-active');
+            document.getElementById(`s${state.step}`).classList.add('text-gray-400');
+            
             state.step += delta;
+            
             document.getElementById(`step-${state.step}`).classList.remove('hidden');
             document.getElementById(`s${state.step}`).classList.add('step-active');
+            document.getElementById(`s${state.step}`).classList.remove('text-gray-400');
             
             document.getElementById('btn-back').classList.toggle('hidden', state.step === 1);
             document.getElementById('btn-next').classList.toggle('hidden', state.step === 3);
             document.getElementById('footer-nav').classList.toggle('hidden', state.step === 3);
+            
             window.scrollTo(0,0);
         }
 
@@ -450,6 +466,7 @@
                     document.getElementById('step-success').classList.remove('hidden');
                 } catch(e) { 
                     btn.disabled = false; btn.innerText = "ลองใหม่อีกครั้ง";
+                    console.error("Submit error", e);
                 }
             };
         }
