@@ -178,6 +178,7 @@
                 document.getElementById('userName').innerText = profile.displayName;
             } else {
                 liff.login();
+                return;
             }
             
             state.lineProfile = { userId: 'U123456', displayName: 'Test User', pictureUrl: 'https://via.placeholder.com/150' };
