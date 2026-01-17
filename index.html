@@ -22,16 +22,16 @@
         <div class="flex justify-between items-center">
             <div>
                 <h1 class="text-2xl font-bold italic">ขนำลุงดำ แคมป์ปิ้ง</h1>
-                <p class="text-emerald-100 text-[10px] opacity-80 uppercase tracking-wider">Riverside Camping & Homestay</p>
+                <p class="text-emerald-100 text-[10px] opacity-80 uppercase tracking-wider">Khamanlungdam Camping & Homestay</p>
             </div>
             <div id="user-status" class="bg-emerald-700/50 p-2 rounded-full text-[10px]">Guest</div>
         </div>
     </header>
 
     <nav class="flex justify-around p-4 border-b bg-white z-40 shadow-sm sticky top-[88px]">
-        <div id="s1" class="step-active pb-1 text-sm">1. เลือกห้อง</div>
-        <div id="s2" class="text-gray-400 pb-1 text-sm">2. อาหาร</div>
-        <div id="s3" class="text-gray-400 pb-1 text-sm">3. จ่ายเงิน</div>
+        <div id="s1" class="step-active pb-1 text-sm">วันที่ & ห้องพัก</div>
+        <div id="s2" class="text-gray-400 pb-1 text-sm">เลือกอาหาร</div>
+        <div id="s3" class="text-gray-400 pb-1 text-sm">สรุปการจอง</div>
     </nav>
 
     <main class="p-5">
@@ -41,7 +41,7 @@
                 <label class="block text-[10px] font-bold text-emerald-800 mb-2 uppercase tracking-wide">📅 เลือกวันที่เข้าพัก</label>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <span class="text-[10px] text-emerald-600 ml-1">เช็คอิน (เริ่มต้นพรุ่งนี้)</span>
+                        <span class="text-[10px] text-emerald-600 ml-1">เช็คอิน</span>
                         <input type="date" id="checkin" onchange="handleDateChange('checkin')" class="w-full p-2.5 rounded-xl border ring-1 ring-emerald-200 text-sm bg-white focus:outline-none">
                     </div>
                     <div>
@@ -71,7 +71,20 @@
         <!-- Step 3: Summary & Payment -->
         <div id="step-3" class="hidden space-y-6 animate-fadeIn">
             <div class="bg-white p-5 rounded-3xl border border-gray-100 shadow-lg">
-                <h3 class="font-bold text-gray-800 text-lg border-b pb-2 mb-4">สรุปยอดชำระ</h3>
+                <h3 class="font-bold text-gray-800 text-lg border-b pb-2 mb-4">สรุปการจอง</h3>
+                
+                <!-- New: Display Dates in Thai -->
+                <div class="bg-slate-50 p-3 rounded-xl mb-4 space-y-1">
+                    <div class="flex justify-between text-[11px]">
+                        <span class="text-gray-500">เช็คอิน:</span>
+                        <span id="display-checkin" class="font-bold text-gray-700">-</span>
+                    </div>
+                    <div class="flex justify-between text-[11px]">
+                        <span class="text-gray-500">เช็คเอาท์:</span>
+                        <span id="display-checkout" class="font-bold text-gray-700">-</span>
+                    </div>
+                </div>
+
                 <div id="summary-items" class="space-y-3 text-sm text-gray-600 mb-4"></div>
 
                 <div class="space-y-2 border-t pt-3">
@@ -185,6 +198,14 @@
             } catch(e) { console.error("Init failed"); }
         }
 
+        // Helper to format date into Thai Long Date
+        function formatThaiDate(dateStr) {
+            if(!dateStr) return "-";
+            const date = new Date(dateStr);
+            const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+            return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
+        }
+
         function setupDates() {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
@@ -221,6 +242,11 @@
             state.selection.checkin = ci.value;
             state.selection.checkout = co.value;
             document.getElementById('stay-duration').innerText = `จำนวน ${state.selection.days} คืน`;
+            
+            // Update UI display dates
+            document.getElementById('display-checkin').innerText = formatThaiDate(ci.value);
+            document.getElementById('display-checkout').innerText = formatThaiDate(co.value);
+            
             calcTotal();
         }
 
