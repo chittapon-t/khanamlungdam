@@ -169,8 +169,7 @@
         }
 
         async function initLiff() {
-            // Uncomment to use LIFF
-            /*
+           
             await liff.init({ liffId: LIFF_ID });
             if (liff.isLoggedIn()) {
                 const profile = await liff.getProfile();
@@ -180,8 +179,7 @@
             } else {
                 liff.login();
             }
-            */
-            // Mock for dev
+            
             state.lineProfile = { userId: 'U123456', displayName: 'Test User', pictureUrl: 'https://via.placeholder.com/150' };
             document.getElementById('userThumb').src = state.lineProfile.pictureUrl;
             document.getElementById('userName').innerText = state.lineProfile.displayName;
