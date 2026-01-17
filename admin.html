@@ -2,150 +2,276 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin - ขนำลุงดำ แคมป์ปิ้ง</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Kanit', sans-serif; }</style>
+    <style>
+        body { font-family: 'Kanit', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .booking-card:active { transform: scale(0.98); transition: transform 0.1s; }
+        /* Responsive Table */
+        @media (max-width: 1024px) {
+            .desktop-table { display: none; }
+            .mobile-cards { display: block; }
+        }
+        @media (min-width: 1025px) {
+            .desktop-table { display: table; }
+            .mobile-cards { display: none; }
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50 pb-20">
 
-    <nav class="bg-red-800 text-white p-4 flex justify-between items-center shadow-md">
-        <h1 class="text-xl font-bold">Admin Panel ขนำลุงดำ</h1>
-        <button onclick="loadData()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">Refresh</button>
+    <!-- Sticky Navigation -->
+    <nav class="bg-red-800 text-white p-4 sticky top-0 z-40 flex justify-between items-center shadow-lg">
+        <h1 class="text-lg font-bold">Admin ขนำลุงดำ</h1>
+        <button onclick="loadData()" class="bg-red-600 active:bg-red-700 px-4 py-2 rounded-full text-sm font-semibold shadow-inner transition-all">
+            🔄 รีเฟรชข้อมูล
+        </button>
     </nav>
 
-    <div class="container mx-auto p-4">
+    <div class="container mx-auto p-3 max-w-[1600px]">
         
         <!-- Dashboard Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white p-4 rounded shadow border-l-4 border-yellow-500">
-                <p class="text-gray-500 text-sm">รอตรวจสอบ</p>
-                <p class="text-2xl font-bold" id="statPending">0</p>
+        <div class="grid grid-cols-3 gap-2 mb-6">
+            <div class="bg-white p-3 rounded-2xl shadow-sm border-b-4 border-yellow-500 text-center">
+                <p class="text-gray-500 text-[10px] sm:text-xs uppercase font-bold">รอตรวจ</p>
+                <p class="text-lg sm:text-2xl font-bold text-yellow-600" id="statPending">0</p>
             </div>
-            <div class="bg-white p-4 rounded shadow border-l-4 border-green-500">
-                <p class="text-gray-500 text-sm">ยืนยันแล้ววันนี้</p>
-                <p class="text-2xl font-bold" id="statConfirmed">0</p>
+            <div class="bg-white p-3 rounded-2xl shadow-sm border-b-4 border-green-500 text-center">
+                <p class="text-gray-500 text-[10px] sm:text-xs uppercase font-bold">ยืนยันแล้ว</p>
+                <p class="text-lg sm:text-2xl font-bold text-green-600" id="statConfirmed">0</p>
             </div>
-            <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500">
-                <p class="text-gray-500 text-sm">เข้าพักวันนี้</p>
-                <p class="text-2xl font-bold" id="statCheckIn">0</p>
+            <div class="bg-white p-3 rounded-2xl shadow-sm border-b-4 border-blue-500 text-center">
+                <p class="text-gray-500 text-[10px] sm:text-xs uppercase font-bold">พักวันนี้</p>
+                <p class="text-lg sm:text-2xl font-bold text-blue-600" id="statCheckIn">0</p>
             </div>
         </div>
 
-        <!-- Booking Table -->
-        <div class="bg-white rounded shadow overflow-x-auto">
-            <table class="min-w-full leading-normal">
-                <thead>
+        <h2 class="text-gray-700 font-bold mb-3 px-1 flex items-center gap-2">
+            <span class="w-2 h-6 bg-red-600 rounded-full"></span>
+            รายการจองทั้งหมด
+        </h2>
+
+        <!-- Desktop Table View -->
+        <div class="bg-white rounded-xl shadow-sm overflow-x-auto hidden border border-gray-100">
+            <table class="min-w-full desktop-table">
+                <thead class="bg-gray-50 text-gray-400 text-[11px] uppercase font-bold tracking-wider">
                     <tr>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Booking ID</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ผู้จอง</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ห้อง / วันที่</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ยอดเงิน</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                        <th class="px-4 py-4 text-left">สถานะ</th>
+                        <th class="px-4 py-4 text-left">ผู้จอง</th>
+                        <th class="px-4 py-4 text-left">เบอร์โทรศัพท์</th>
+                        <th class="px-4 py-4 text-left">เข้าพัก - ออก</th>
+                        <th class="px-4 py-4 text-left">ห้องพัก + คน</th>
+                        <th class="px-4 py-4 text-left">รายการอาหาร</th>
+                        <th class="px-4 py-4 text-right">ยอดเงิน</th>
+                        <th class="px-4 py-4 text-right">มัดจำ</th>
+                        <th class="px-4 py-4 text-right text-red-500">คงเหลือ</th>
+                        <th class="px-4 py-4 text-left">ชื่อในไลน์</th>
+                        <th class="px-4 py-4 text-center">การจัดการ</th>
                     </tr>
                 </thead>
-                <tbody id="bookingTableBody">
-                    <!-- Rows -->
-                    <tr><td colspan="6" class="p-4 text-center">กำลังโหลดข้อมูล...</td></tr>
+                <tbody id="bookingTableBody" class="divide-y divide-gray-100 text-sm">
+                    <tr><td colspan="11" class="p-10 text-center text-gray-400">กำลังโหลดข้อมูล...</td></tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Mobile Card View -->
+        <div id="bookingCardsMobile" class="mobile-cards space-y-4">
+            <div class="text-center py-10 text-gray-400 font-bold">กำลังโหลดข้อมูล...</div>
         </div>
 
     </div>
 
     <!-- Modal for Slip -->
-    <div id="slipModal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50" onclick="this.classList.add('hidden')">
-        <img id="modalImg" src="" class="max-h-screen max-w-full p-4">
+    <div id="slipModal" class="fixed inset-0 bg-black/95 hidden items-center justify-center z-50 p-4" onclick="this.classList.add('hidden')">
+        <div class="relative max-w-full w-full max-h-full flex flex-col items-center" onclick="event.stopPropagation()">
+            <button class="absolute -top-12 right-0 text-white text-4xl p-2" onclick="document.getElementById('slipModal').classList.add('hidden')">&times;</button>
+            <img id="modalImg" src="" class="max-w-full max-h-[70vh] object-contain rounded-lg shadow-2xl bg-white/10">
+            <div class="mt-6 flex flex-col w-full gap-3 px-4 max-w-md">
+                <a id="downloadBtn" href="#" target="_blank" class="w-full bg-white text-black text-center py-4 rounded-xl font-bold shadow-lg active:bg-gray-200">ดูภาพเต็ม / ดาวน์โหลด</a>
+                <button onclick="document.getElementById('slipModal').classList.add('hidden')" class="w-full bg-gray-800 text-white py-4 rounded-xl font-bold border border-white/20">ปิด</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec'; // **ใส่ GAS URL เดียวกัน**
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwb9VWt0rQYJ2dJa9jQKM23YRKsx-YReKnqJTiqGRbg26jEMtPP-RzxDbe_BahxUiSu5g/exec';
 
         async function loadData() {
             try {
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_all_bookings' }) });
                 const json = await res.json();
                 if(json.status === 'success') {
-                    renderTable(json.data);
+                    renderUI(json.data);
                     updateStats(json.data);
                 }
             } catch(e) {
-                console.error(e);
-                Swal.fire('Error', 'โหลดข้อมูลไม่สำเร็จ', 'error');
+                Swal.fire('Error', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
             }
         }
 
-        function renderTable(data) {
+        function renderUI(data) {
             const tbody = document.getElementById('bookingTableBody');
-            tbody.innerHTML = data.map(row => `
-                <tr class="hover:bg-gray-50 border-b">
-                    <td class="px-5 py-5 bg-white text-sm">
-                        <span class="relative inline-block px-3 py-1 font-semibold leading-tight ${getStatusColor(row.status)}">
-                            <span aria-hidden class="absolute inset-0 opacity-50 rounded-full"></span>
-                            <span class="relative">${row.status}</span>
-                        </span>
+            const cardContainer = document.getElementById('bookingCardsMobile');
+            
+            if (!data || data.length === 0) {
+                const emptyHTML = `<div class="p-10 text-center text-gray-400 font-bold">ไม่พบข้อมูลการจอง</div>`;
+                tbody.innerHTML = `<tr><td colspan="11">${emptyHTML}</td></tr>`;
+                cardContainer.innerHTML = emptyHTML;
+                return;
+            }
+
+            // จัดเรียงข้อมูลตาม ID ล่าสุดขึ้นก่อน
+            const sortedData = [...data].sort((a, b) => b.id - a.id);
+
+            tbody.innerHTML = sortedData.map(row => renderTableRow(row)).join('');
+            cardContainer.innerHTML = sortedData.map(row => renderMobileCard(row)).join('');
+        }
+
+        function renderTableRow(row) {
+            const isUrl = row.slip && row.slip.startsWith('http');
+            const balance = Number(row.total || 0) - Number(row.deposit || 0);
+            
+            return `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-4">
+                        <span class="px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${getStatusClass(row.status)}">${row.status}</span>
                     </td>
-                    <td class="px-5 py-5 bg-white text-sm">
-                        <p class="text-gray-900 whitespace-no-wrap">${row.id}</p>
-                        <p class="text-gray-400 text-xs">${new Date(row.timestamp).toLocaleDateString('th-TH')}</p>
+                    <td class="px-4 py-4 font-bold text-stone-800">${row.booker || '-'}</td>
+                    <td class="px-4 py-4 text-stone-600">${row.phone || '-'}</td>
+                    <td class="px-4 py-4 text-xs font-semibold">
+                        <span class="text-green-700">${row.checkIn || '-'}</span><br>
+                        <span class="text-red-700">${row.checkOut || '-'}</span>
                     </td>
-                    <td class="px-5 py-5 bg-white text-sm">
-                        <p class="text-gray-900 font-bold">${row.booker}</p>
-                        <p class="text-gray-600 text-xs">${row.phone}</p>
+                    <td class="px-4 py-4 text-[11px] leading-tight">
+                        <div class="font-bold text-stone-700">${row.room || '-'}</div>
+                        <div class="text-stone-400">${row.totalPax || 0} คน</div>
                     </td>
-                    <td class="px-5 py-5 bg-white text-sm">
-                        <p class="text-gray-900">${row.room}</p>
-                        <p class="text-blue-600 text-xs font-bold">In: ${row.checkIn}</p>
+                    <td class="px-4 py-4 text-[11px] leading-tight text-stone-500 italic">
+                        ${row.foodNames ? formatFood(row.foodNames, row.foodQty) : '-'}
                     </td>
-                    <td class="px-5 py-5 bg-white text-sm">
-                        <p class="text-gray-900">รวม: ${Number(row.total).toLocaleString()}</p>
-                        <p class="text-green-600 text-xs">มัดจำ: ${Number(row.deposit).toLocaleString()}</p>
-                    </td>
-                    <td class="px-5 py-5 bg-white text-sm">
-                        <div class="flex gap-2">
-                            ${row.slip ? `<button onclick="viewSlip('${row.slip}')" class="text-blue-500 hover:text-blue-800 text-xs border p-1 rounded">ดูสลิป</button>` : '<span class="text-red-300 text-xs">No Slip</span>'}
+                    <td class="px-4 py-4 text-right font-bold">${Number(row.total || 0).toLocaleString()}</td>
+                    <td class="px-4 py-4 text-right font-bold text-green-600">${Number(row.deposit || 0).toLocaleString()}</td>
+                    <td class="px-4 py-4 text-right font-bold text-red-500">${balance.toLocaleString()}</td>
+                    <td class="px-4 py-4 text-xs text-blue-600 font-bold">${row.lineName || '-'}</td>
+                    <td class="px-4 py-4">
+                        <div class="flex gap-1 justify-center">
+                            ${isUrl ? `<button onclick="viewSlip('${row.slip}')" class="bg-blue-500 text-white p-2 rounded-lg text-[10px] font-bold shadow-sm">สลิป</button>` : ''}
                             ${row.status === 'Pending' ? `
-                                <button onclick="updateStatus('${row.id}', 'Confirmed')" class="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600">ยืนยัน</button>
-                                <button onclick="updateStatus('${row.id}', 'Reject')" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">ปฏิเสธ</button>
+                                <button onclick="updateStatus('${row.id}', 'Confirmed')" class="bg-green-600 text-white p-2 rounded-lg text-[10px] font-bold shadow-sm">ยืนยัน</button>
+                                <button onclick="updateStatus('${row.id}', 'Reject')" class="bg-red-500 text-white p-2 rounded-lg text-[10px] font-bold shadow-sm">X</button>
                             ` : ''}
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `;
         }
 
-        function getStatusColor(status) {
-            if(status === 'Pending') return 'text-yellow-900 bg-yellow-200';
-            if(status === 'Confirmed') return 'text-green-900 bg-green-200';
-            return 'text-red-900 bg-red-200';
+        function renderMobileCard(row) {
+            const isUrl = row.slip && row.slip.startsWith('http');
+            const balance = Number(row.total || 0) - Number(row.deposit || 0);
+            
+            return `
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 booking-card">
+                    <div class="flex justify-between items-start mb-4 border-b border-gray-50 pb-3">
+                        <div>
+                            <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${getStatusClass(row.status)}">${row.status}</span>
+                            <p class="text-[10px] text-gray-400 mt-2 font-bold">ID: ${row.id}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-gray-400 uppercase font-bold">ยอดเงินทั้งหมด</p>
+                            <p class="text-xl font-bold text-stone-800">${Number(row.total || 0).toLocaleString()} ฿</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3 mb-4">
+                        <div class="flex justify-between">
+                            <span class="text-xs text-gray-400">ผู้จอง/เบอร์:</span>
+                            <span class="text-xs font-bold text-stone-800">${row.booker} (${row.phone})</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-xs text-gray-400">วันที่เข้า - ออก:</span>
+                            <span class="text-xs font-bold text-stone-800">${row.checkIn} - ${row.checkOut}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-xs text-gray-400">ชื่อไลน์:</span>
+                            <span class="text-xs font-bold text-blue-600">${row.lineName}</span>
+                        </div>
+                        <div class="bg-stone-50 p-3 rounded-2xl">
+                            <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">รายละเอียดการพัก & อาหาร</p>
+                            <p class="text-xs font-bold text-stone-700">${row.room} (${row.totalPax} ท่าน)</p>
+                            <p class="text-[11px] text-stone-500 italic mt-1">${row.foodNames ? formatFood(row.foodNames, row.foodQty) : 'ไม่มีรายการอาหาร'}</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-green-50 p-2 rounded-xl text-center">
+                                <p class="text-[10px] text-green-600 font-bold uppercase tracking-wider">มัดจำแล้ว</p>
+                                <p class="text-sm font-bold text-green-700">${Number(row.deposit || 0).toLocaleString()}</p>
+                            </div>
+                            <div class="bg-red-50 p-2 rounded-xl text-center">
+                                <p class="text-[10px] text-red-600 font-bold uppercase tracking-wider">ยอดคงเหลือ</p>
+                                <p class="text-sm font-bold text-red-700">${balance.toLocaleString()}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        ${isUrl ? `<button onclick="viewSlip('${row.slip}')" class="flex-1 py-4 bg-blue-100 text-blue-700 rounded-2xl text-xs font-bold active:bg-blue-200 transition-colors">ดูหลักฐานสลิป</button>` : `<div class="flex-1 py-4 bg-gray-100 text-gray-400 rounded-2xl text-center text-xs italic">ไม่มีสลิป</div>`}
+                        
+                        ${row.status === 'Pending' ? `
+                            <button onclick="updateStatus('${row.id}', 'Confirmed')" class="flex-1 py-4 bg-green-600 text-white rounded-2xl text-xs font-bold shadow-lg shadow-green-100 active:bg-green-700 transition-all">ยืนยัน</button>
+                            <button onclick="updateStatus('${row.id}', 'Reject')" class="px-5 py-4 bg-red-50 text-red-500 rounded-2xl text-xs font-bold border border-red-100 italic">X</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatFood(names, qtys) {
+            const n = names.split(',');
+            const q = qtys.split(',');
+            return n.map((name, i) => `${name} (x${q[i]})`).join(', ');
+        }
+
+        function getStatusClass(status) {
+            if(status === 'Pending') return 'bg-yellow-100 text-yellow-700';
+            if(status === 'Confirmed') return 'bg-green-100 text-green-700';
+            return 'bg-red-100 text-red-700';
         }
 
         function updateStats(data) {
-            const today = new Date().toLocaleDateString('en-GB'); // dd/mm/yyyy matching format
             document.getElementById('statPending').innerText = data.filter(d => d.status === 'Pending').length;
-            document.getElementById('statConfirmed').innerText = data.filter(d => d.status === 'Confirmed').length; // จริงๆ ควรเช็ควันที่ด้วย
+            document.getElementById('statConfirmed').innerText = data.filter(d => d.status === 'Confirmed').length;
+            const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
             document.getElementById('statCheckIn').innerText = data.filter(d => d.checkIn === today && d.status === 'Confirmed').length;
         }
 
         function viewSlip(url) {
-            document.getElementById('modalImg').src = url;
-            document.getElementById('slipModal').classList.remove('hidden');
-            document.getElementById('slipModal').classList.add('flex');
+            const modalImg = document.getElementById('modalImg');
+            const slipModal = document.getElementById('slipModal');
+            const downloadBtn = document.getElementById('downloadBtn');
+            modalImg.src = url;
+            downloadBtn.href = url;
+            slipModal.classList.remove('hidden');
+            slipModal.classList.add('flex');
         }
 
         async function updateStatus(id, status) {
-            const confirm = await Swal.fire({
+            const result = await Swal.fire({
                 title: 'ยืนยันการทำรายการ?',
-                text: `เปลี่ยนสถานะเป็น ${status}`,
+                text: `ต้องการเปลี่ยนสถานะรายการนี้เป็น "${status === 'Confirmed' ? 'ยืนยันแล้ว' : 'ปฏิเสธ'}" ใช่หรือไม่?`,
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonText: 'ใช่, ดำเนินการ'
+                confirmButtonColor: status === 'Confirmed' ? '#059669' : '#DC2626',
+                confirmButtonText: 'ยืนยัน',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true
             });
 
-            if(confirm.isConfirmed) {
+            if(result.isConfirmed) {
+                Swal.fire({ title: 'กำลังบันทึกข้อมูล...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
                 try {
                     const res = await fetch(API_URL, {
                         method: 'POST',
@@ -153,16 +279,15 @@
                     });
                     const json = await res.json();
                     if(json.status === 'success') {
-                        Swal.fire('สำเร็จ', 'อัปเดตสถานะเรียบร้อย', 'success');
+                        Swal.fire('เรียบร้อย!', 'อัปเดตสถานะสำเร็จ', 'success');
                         loadData();
                     }
                 } catch(e) {
-                    Swal.fire('Error', e.message, 'error');
+                    Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเพื่อบันทึกได้', 'error');
                 }
             }
         }
 
-        // Init
         loadData();
     </script>
 </body>
