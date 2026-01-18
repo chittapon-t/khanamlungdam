@@ -3,97 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KLD Admin Dashboard</title>
+    <title>KLD Admin Dashboard - Messaging API Version</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Calendar -->
+    <!-- Calendar Resource -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <style>
         body { font-family: 'Kanit', sans-serif; background-color: #f1f5f9; }
-        .tab-active { background-color: #065f46; color: white; }
+        .tab-active { background-color: #064e3b; color: white; border-left: 4px solid #10b981; }
+        .status-pill { padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+        .status-wait { background-color: #fef3c7; color: #92400e; }
+        .status-confirm { background-color: #d1fae5; color: #065f46; }
+        .status-cancel { background-color: #fee2e2; color: #991b1b; }
+        #loading-screen { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
 
-    <!-- Login Modal -->
-    <div id="login-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-        <div class="bg-white p-8 rounded-2xl w-full max-w-sm text-center space-y-4">
-            <h2 class="text-xl font-bold text-emerald-800">ผู้ดูแลระบบ</h2>
-            <input type="password" id="admin-pass" placeholder="รหัสผ่าน" class="w-full p-3 border rounded-xl text-center">
-            <button onclick="login()" class="w-full bg-emerald-600 text-white p-3 rounded-xl font-bold">เข้าสู่ระบบ</button>
+    <div id="loading-screen">
+        <div class="bg-white p-5 rounded-xl shadow-xl flex flex-col items-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-4 border-emerald-600 border-t-transparent mb-2"></div>
+            <p class="text-sm font-bold">กำลังบันทึกข้อมูล...</p>
         </div>
     </div>
 
-    <!-- Layout -->
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-slate-900/95 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-sm text-center space-y-6 shadow-2xl">
+            <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl">🛡️</div>
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Admin Login</h2>
+                <p class="text-sm text-slate-400">ขนำลุงดำ แคมป์ปิ้ง</p>
+            </div>
+            <input type="password" id="admin-pass" placeholder="กรอกรหัสผ่านผู้ดูแล" class="w-full p-4 border rounded-2xl text-center text-xl tracking-widest outline-none focus:ring-2 focus:ring-emerald-500/20">
+            <button onclick="login()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white p-4 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-200">เข้าสู่ระบบ</button>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
     <div class="flex flex-1 overflow-hidden">
         <!-- Sidebar -->
-        <aside class="w-64 bg-emerald-900 text-white flex flex-col hidden md:flex">
-            <div class="p-6 text-2xl font-bold italic border-b border-emerald-800">ขนำลุงดำ</div>
-            <nav class="flex-1 p-4 space-y-2">
-                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full text-left p-3 rounded-xl hover:bg-emerald-800 tab-active">📊 รายการจอง</button>
-                <button onclick="switchTab('calendar')" id="nav-calendar" class="w-full text-left p-3 rounded-xl hover:bg-emerald-800">📅 ปฏิทิน</button>
-                <button onclick="switchTab('config')" id="nav-config" class="w-full text-left p-3 rounded-xl hover:bg-emerald-800">⚙️ ตั้งค่า (System)</button>
+        <aside class="w-64 bg-slate-900 text-white flex flex-col hidden md:flex">
+            <div class="p-8 text-xl font-bold tracking-tight flex items-center">
+                <span class="w-3 h-3 bg-emerald-500 rounded-full mr-2"></span>
+                KLD ADMIN
+            </div>
+            <nav class="flex-1 px-4 space-y-1">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 flex items-center space-x-3 transition-all tab-active">
+                    <span>📊</span> <span>รายการจอง</span>
+                </button>
+                <button onclick="switchTab('calendar')" id="nav-calendar" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 flex items-center space-x-3 transition-all">
+                    <span>📅</span> <span>ปฏิทินที่พัก</span>
+                </button>
+                <button onclick="switchTab('config')" id="nav-config" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 flex items-center space-x-3 transition-all">
+                    <span>⚙️</span> <span>ตั้งค่าระบบ</span>
+                </button>
             </nav>
+            <div class="p-4 border-t border-slate-800">
+                <button onclick="location.reload()" class="w-full p-3 text-xs text-slate-500 hover:text-red-400 text-left">ออกจากระบบ</button>
+            </div>
         </aside>
 
-        <!-- Main -->
-        <main class="flex-1 flex flex-col bg-slate-50 overflow-hidden relative">
-            <header class="bg-white p-4 shadow-sm md:hidden flex justify-between items-center">
-                <span class="font-bold text-emerald-800">Admin Panel</span>
-                <button onclick="location.reload()" class="text-xs text-red-500">Exit</button>
+        <!-- Content Area -->
+        <main class="flex-1 flex flex-col bg-slate-50 overflow-hidden">
+            <header class="bg-white px-8 py-4 shadow-sm flex justify-between items-center">
+                <h2 id="page-title" class="text-lg font-bold text-slate-800">รายการจองล่าสุด</h2>
+                <div class="flex items-center space-x-4 text-sm">
+                    <span id="sync-status" class="text-slate-400 flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span> Online
+                    </span>
+                </div>
             </header>
 
-            <div class="flex-1 overflow-auto p-6">
-                <!-- Dashboard -->
+            <div class="flex-1 overflow-auto p-8">
+                <!-- Dashboard Tab -->
                 <div id="tab-dashboard" class="space-y-6">
-                    <h2 class="text-2xl font-bold text-gray-800">รายการจองล่าสุด</h2>
-                    <div class="bg-white rounded-2xl shadow-sm overflow-hidden border">
-                        <table class="w-full text-sm text-left">
-                            <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
-                                <tr>
-                                    <th class="p-4">สถานะ</th>
-                                    <th class="p-4">Booking ID</th>
-                                    <th class="p-4">ลูกค้า</th>
-                                    <th class="p-4">ห้องพัก</th>
-                                    <th class="p-4">Check-in</th>
-                                    <th class="p-4">สลิป</th>
-                                    <th class="p-4">จัดการ</th>
+                    <div class="bg-white rounded-3xl shadow-sm overflow-hidden border border-slate-200">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
+                                    <th class="p-5 border-b">สถานะ</th>
+                                    <th class="p-5 border-b text-center">หลักฐาน</th>
+                                    <th class="p-5 border-b">ผู้จอง / ห้อง</th>
+                                    <th class="p-5 border-b">วันที่เข้าพัก</th>
+                                    <th class="p-5 border-b">ยอดมัดจำ</th>
+                                    <th class="p-5 border-b text-center">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody id="booking-table-body" class="divide-y"></tbody>
+                            <tbody id="booking-table-body" class="divide-y divide-slate-100">
+                                <!-- Data will be loaded here -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Calendar -->
-                <div id="tab-calendar" class="hidden h-full flex flex-col">
-                    <div class="bg-white p-4 rounded-2xl shadow-sm flex-1">
+                <!-- Calendar Tab -->
+                <div id="tab-calendar" class="hidden h-full">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 h-full">
                         <div id="calendar"></div>
                     </div>
                 </div>
 
-                <!-- Config -->
-                <div id="tab-config" class="hidden space-y-4">
+                <!-- Config Tab -->
+                <div id="tab-config" class="hidden space-y-6">
                     <div class="flex justify-between items-center">
-                        <h2 class="text-2xl font-bold text-gray-800">ตั้งค่าระบบ (System Config)</h2>
-                        <button onclick="saveConfig()" class="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-emerald-700">บันทึกข้อมูล</button>
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">System Configuration</h2>
+                            <p class="text-xs text-slate-400">จัดการข้อมูลพื้นฐานและราคาห้องพัก</p>
+                        </div>
+                        <button onclick="saveConfig()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-emerald-100 transition-all">บันทึกข้อมูลทั้งหมด</button>
                     </div>
-                    <div class="bg-white p-1 rounded-2xl shadow-sm border overflow-hidden">
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-sm">
-                            <thead class="bg-gray-100 text-gray-700 border-b">
+                            <thead class="bg-slate-50 text-slate-500 font-bold text-[11px] uppercase">
                                 <tr>
-                                    <th class="p-3 w-1/4">Type</th>
-                                    <th class="p-3 w-1/4">Value</th>
-                                    <th class="p-3 w-1/2">Detail</th>
-                                    <th class="p-3 w-10"></th>
+                                    <th class="p-4 w-1/4">Key/Type</th>
+                                    <th class="p-4 w-1/4">Value</th>
+                                    <th class="p-4 w-1/2">Description</th>
+                                    <th class="p-4 w-12"></th>
                                 </tr>
                             </thead>
-                            <tbody id="config-table-body" class="divide-y"></tbody>
+                            <tbody id="config-table-body" class="divide-y divide-slate-100"></tbody>
                         </table>
-                        <div class="p-2 text-center border-t">
-                            <button onclick="addConfigRow()" class="text-blue-600 font-bold hover:underline">+ เพิ่มแถวใหม่</button>
+                        <div class="p-4 text-center bg-slate-50/50">
+                            <button onclick="addConfigRow()" class="text-emerald-600 font-bold text-sm hover:underline">+ เพิ่มรายการใหม่</button>
                         </div>
                     </div>
                 </div>
@@ -101,81 +136,158 @@
         </main>
     </div>
 
-    <!-- Slip Modal -->
-    <div id="slip-modal" onclick="this.classList.add('hidden')" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center cursor-pointer">
-        <img id="slip-preview" src="" class="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl">
+    <!-- Slip Preview Modal -->
+    <div id="slip-modal" onclick="this.classList.add('hidden')" class="hidden fixed inset-0 bg-slate-900/90 z-[100] flex items-center justify-center p-4 cursor-pointer backdrop-blur-sm">
+        <div class="relative max-w-lg w-full">
+            <img id="slip-preview" src="" class="w-full rounded-2xl shadow-2xl border-4 border-white">
+            <p class="text-white text-center mt-4 font-bold">คลิกที่ใดก็ได้เพื่อปิด</p>
+        </div>
     </div>
 
     <script>
-        // ** CONFIG URL **
-        const API = 'https://script.google.com/macros/s/AKfycbwektF_DO710_XQ4bEoVtYxgupJRreNyvKrQ8t36ILerJFnzWfnFItQkqdg1yswHpAc3g/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbwektF_DO710_XQ4bEoVtYxgupJRreNyvKrQ8t36ILerJFnzWfnFItQkqdg1yswHpAc3g/exec'; // ตรวจสอบว่าตรงกับ GAS URL
         let rawBookings = [];
+        let currentAdminPass = '';
 
         async function login() {
             const pass = document.getElementById('admin-pass').value;
+            if(!pass) return;
+            
+            showLoading(true, "กำลังยืนยันตัวตน...");
             try {
                 const res = await fetch(API, {
                     method: 'POST',
                     body: JSON.stringify({ action: 'getAdminData', password: pass })
                 });
                 const data = await res.json();
+                
                 if (data.success) {
+                    currentAdminPass = pass;
                     rawBookings = data.bookings;
                     renderBookings(data.bookings);
                     renderConfig(data.configRaw);
                     initCalendar(data.bookings);
                     document.getElementById('login-modal').classList.add('hidden');
                 } else {
-                    Swal.fire('Login Failed', 'รหัสผ่านไม่ถูกต้อง', 'error');
+                    Swal.fire('Error', 'รหัสผ่านไม่ถูกต้อง', 'error');
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e);
+                Swal.fire('Error', 'ไม่สามารถเชื่อมต่อกับ Server ได้', 'error');
+            } finally {
+                showLoading(false);
+            }
         }
 
         function switchTab(tab) {
+            const titles = { 'dashboard': 'รายการจองล่าสุด', 'calendar': 'ปฏิทินการเข้าพัก', 'config': 'ตั้งค่าระบบ' };
+            document.getElementById('page-title').innerText = titles[tab];
+
             ['dashboard', 'calendar', 'config'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.add('hidden');
                 document.getElementById(`nav-${t}`).classList.remove('tab-active');
             });
             document.getElementById(`tab-${tab}`).classList.remove('hidden');
             document.getElementById(`nav-${tab}`).classList.add('tab-active');
-            if(tab === 'calendar') setTimeout(() => window.calendar.render(), 200);
+            
+            if(tab === 'calendar') setTimeout(() => window.calendar.render(), 300);
         }
 
         function renderBookings(list) {
             const tbody = document.getElementById('booking-table-body');
+            if(!list || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-slate-400">ไม่พบข้อมูลการจอง</td></tr>`;
+                return;
+            }
+
             tbody.innerHTML = list.map(b => {
-                const statusColor = b.status === 'ยืนยันแล้ว' ? 'bg-green-100 text-green-800' : 
-                                    b.status === 'ยกเลิก' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800';
+                let statusClass = 'status-wait';
+                if(b.status === 'ยืนยันการจองแล้ว' || b.status === 'ยืนยันแล้ว') statusClass = 'status-confirm';
+                if(b.status === 'ยกเลิก') statusClass = 'status-cancel';
                 
-                const slipBtn = b.slip && b.slip.startsWith('http') 
-                    ? `<button onclick="viewSlip('${b.slip}')" class="text-blue-600 hover:underline">ดูรูป</button>` 
-                    : `<span class="text-gray-400">-</span>`;
+                const hasSlip = b.slip && b.slip.includes('http');
 
                 return `
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="p-4"><span class="px-2 py-1 rounded-full text-xs font-bold ${statusColor}">${b.status}</span></td>
-                    <td class="p-4 font-mono text-xs text-gray-500">${b.id}</td>
-                    <td class="p-4">
-                        <div class="font-bold text-gray-800">${b.name}</div>
-                        <div class="text-xs text-gray-500">${b.tel}</div>
+                <tr class="group hover:bg-slate-50 transition-all">
+                    <td class="p-5">
+                        <span class="status-pill ${statusClass}">${b.status}</span>
                     </td>
-                    <td class="p-4 text-xs">${b.room}</td>
-                    <td class="p-4 text-xs">
-                        <div>In: ${formatDate(b.checkin)}</div>
-                        <div>Out: ${formatDate(b.checkout)}</div>
+                    <td class="p-5 text-center">
+                        ${hasSlip ? 
+                            `<button onclick="viewSlip('${b.slip}')" class="bg-white border shadow-sm p-2 rounded-xl hover:bg-emerald-50 transition-colors">
+                                <span class="text-xl">📄</span>
+                             </button>` : 
+                            `<span class="text-slate-300 text-xs">-</span>`
+                        }
                     </td>
-                    <td class="p-4 text-xs">${slipBtn}</td>
-                    <td class="p-4 flex gap-2">
-                        <button onclick="updateStatus('${b.id}', 'ยืนยันแล้ว')" class="bg-emerald-100 text-emerald-700 p-1.5 rounded hover:bg-emerald-200">✓</button>
-                        <button onclick="updateStatus('${b.id}', 'ยกเลิก')" class="bg-red-100 text-red-700 p-1.5 rounded hover:bg-red-200">✕</button>
+                    <td class="p-5">
+                        <div class="font-bold text-slate-800">${b.name}</div>
+                        <div class="text-xs text-slate-400 font-mono tracking-tighter">${b.id} | ${b.room}</div>
+                    </td>
+                    <td class="p-5 text-xs text-slate-600">
+                        <div class="flex items-center"><span class="w-10 text-slate-300">เข้า:</span> ${formatDate(b.checkin)}</div>
+                        <div class="flex items-center"><span class="w-10 text-slate-300">ออก:</span> ${formatDate(b.checkout)}</div>
+                    </td>
+                    <td class="p-5 font-bold text-slate-700 text-sm">
+                        ฿${Number(b.deposit || 0).toLocaleString()}
+                    </td>
+                    <td class="p-5 text-center">
+                        <div class="flex justify-center space-x-2">
+                            <button onclick="updateStatus('${b.id}', 'ยืนยันการจองแล้ว')" title="ยืนยันการจอง" class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center shadow-sm">✓</button>
+                            <button onclick="updateStatus('${b.id}', 'ยกเลิก')" title="ยกเลิกการจอง" class="w-10 h-10 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center shadow-sm">✕</button>
+                        </div>
                     </td>
                 </tr>`;
             }).join('');
         }
 
+        async function updateStatus(id, newStatus) {
+            const confirmMsg = newStatus === 'ยืนยันการจองแล้ว' 
+                ? 'ยืนยันการชำระเงินและส่งข้อความแจ้งลูกค้าใช่ไหม?' 
+                : 'คุณต้องการยกเลิกรายการจองนี้ใช่หรือไม่?';
+
+            const result = await Swal.fire({
+                title: 'ยืนยันรายการ?',
+                text: confirmMsg,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#059669',
+                confirmButtonText: 'ตกลง',
+                cancelButtonText: 'ยกเลิก'
+            });
+
+            if(!result.isConfirmed) return;
+
+            showLoading(true, "กำลังอัปเดตและส่ง Flex Message...");
+            try {
+                const res = await fetch(API, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: 'updateStatus', 
+                        bookingId: id, 
+                        status: newStatus,
+                        password: currentAdminPass 
+                    })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    Swal.fire('สำเร็จ', 'อัปเดตสถานะและแจ้งเตือนลูกค้าเรียบร้อย', 'success');
+                    // Refresh current data locally
+                    const index = rawBookings.findIndex(b => b.id === id);
+                    if(index !== -1) rawBookings[index].status = newStatus;
+                    renderBookings(rawBookings);
+                }
+            } catch (e) {
+                Swal.fire('Error', 'ไม่สามารถส่งข้อมูลได้', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
         function formatDate(d) {
             if(!d) return "-";
-            return new Date(d).toLocaleDateString('th-TH');
+            const date = new Date(d);
+            return date.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
         }
 
         function viewSlip(url) {
@@ -183,29 +295,29 @@
             document.getElementById('slip-modal').classList.remove('hidden');
         }
 
-        async function updateStatus(id, status) {
-            if(!confirm(`ยืนยันเปลี่ยนสถานะเป็น "${status}"?`)) return;
-            await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'updateBookingStatus', bookingId: id, status: status }) });
-            const row = rawBookings.find(b => b.id === id);
-            if(row) row.status = status;
-            renderBookings(rawBookings);
+        function showLoading(show, text = "") {
+            document.getElementById('loading-screen').style.display = show ? 'flex' : 'none';
+            if(text) document.querySelector('#loading-screen p').innerText = text;
         }
 
-        // --- Config ---
+        // --- Config Section ---
         function renderConfig(rows) {
             const tbody = document.getElementById('config-table-body');
             tbody.innerHTML = '';
-            rows.forEach(r => addConfigRow(r[0], r[1], r[2]));
+            if(rows && rows.length > 0) {
+                rows.forEach(r => addConfigRow(r[0], r[1], r[2]));
+            }
         }
 
-        function addConfigRow(type='', val='', detail='') {
+        function addConfigRow(key='', val='', desc='') {
             const tbody = document.getElementById('config-table-body');
             const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50";
             tr.innerHTML = `
-                <td class="p-2"><input type="text" class="w-full p-2 border rounded bg-gray-50 font-mono text-emerald-700" value="${type}" placeholder="Type"></td>
-                <td class="p-2"><input type="text" class="w-full p-2 border rounded" value="${val}" placeholder="Value"></td>
-                <td class="p-2"><input type="text" class="w-full p-2 border rounded" value="${detail}" placeholder="Detail"></td>
-                <td class="p-2 text-center"><button onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600">🗑</button></td>
+                <td class="p-3"><input type="text" class="w-full p-2 border rounded-lg text-xs font-mono bg-white" value="${key}" placeholder="KEY"></td>
+                <td class="p-3"><input type="text" class="w-full p-2 border rounded-lg text-xs font-bold text-emerald-700 bg-white" value="${val}" placeholder="Value"></td>
+                <td class="p-3"><input type="text" class="w-full p-2 border rounded-lg text-xs text-slate-500 bg-white" value="${desc}" placeholder="คำอธิบาย"></td>
+                <td class="p-3 text-center"><button onclick="this.closest('tr').remove()" class="text-red-300 hover:text-red-600 transition-colors">🗑</button></td>
             `;
             tbody.appendChild(tr);
         }
@@ -214,27 +326,45 @@
             const rows = [];
             document.querySelectorAll('#config-table-body tr').forEach(tr => {
                 const inputs = tr.querySelectorAll('input');
-                rows.push([inputs[0].value, inputs[1].value, inputs[2].value]);
+                if(inputs[0].value) {
+                    rows.push([inputs[0].value, inputs[1].value, inputs[2].value]);
+                }
             });
-            await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'saveSystemConfig', rows: rows }) });
-            Swal.fire('Saved', 'บันทึกเรียบร้อย', 'success');
+
+            showLoading(true, "กำลังบันทึกตั้งค่าระบบ...");
+            try {
+                await fetch(API, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'saveSystemConfig', rows: rows, password: currentAdminPass }) 
+                });
+                Swal.fire('Saved', 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
+            } catch (e) {
+                Swal.fire('Error', 'บันทึกไม่สำเร็จ', 'error');
+            } finally {
+                showLoading(false);
+            }
         }
 
-        // --- Calendar ---
+        // --- Calendar Section ---
         function initCalendar(bookings) {
             const el = document.getElementById('calendar');
-            const events = bookings.map(b => ({
+            const events = bookings.filter(b => b.status !== 'ยกเลิก').map(b => ({
                 title: `${b.room} (${b.name})`,
                 start: b.checkin,
                 end: b.checkout,
-                color: b.status === 'ยืนยันแล้ว' ? '#059669' : '#d97706'
+                backgroundColor: (b.status === 'ยืนยันการจองแล้ว' || b.status === 'ยืนยันแล้ว') ? '#10b981' : '#f59e0b',
+                borderColor: 'transparent'
             }));
             
             window.calendar = new FullCalendar.Calendar(el, {
                 initialView: 'dayGridMonth',
                 locale: 'th',
-                height: 'auto',
-                events: events
+                height: '100%',
+                headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' },
+                events: events,
+                eventClick: function(info) {
+                    Swal.fire({ title: info.event.title, text: `ช่วงเวลา: ${info.event.start.toLocaleDateString()} - ${info.event.end.toLocaleDateString()}` });
+                }
             });
         }
     </script>
